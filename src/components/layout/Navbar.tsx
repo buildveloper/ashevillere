@@ -16,10 +16,12 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useSearch } from "@/components/search/GlobalSearch";
 
 // Link definitions with their metadata
 const NAV_LINKS = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/homes-for-sale", label: "Homes for Sale", icon: Home },
   { href: "/market-reports", label: "Market Reports", icon: TrendingUp },
   { href: "/neighborhoods", label: "Neighborhoods", icon: Building2 },
   { href: "/tools", label: "Tools", icon: Wrench },
@@ -129,14 +131,17 @@ function NavLink({
   );
 }
 
-// Search trigger button (placeholder for future search)
+// Search trigger button — opens global search
 function SearchTrigger() {
+  const { openSearch } = useSearch();
+
   return (
     <motion.button
       className="relative w-9 h-9 rounded-full flex items-center justify-center glass-hover text-slate-400 hover:text-slate-200 dark:hover:text-white transition-colors"
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
       aria-label="Open search"
+      onClick={() => openSearch()}
     >
       <Search className="w-4 h-4" strokeWidth={1.5} />
     </motion.button>

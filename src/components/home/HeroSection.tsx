@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useMotionValue, useSpring } from "fram
 import { useEffect } from "react";
 import { Search, Sparkles, MapPin, ArrowRight, ChevronDown, Gem, Home } from "lucide-react";
 import Link from "next/link";
+import { useSearch } from "@/components/search/GlobalSearch";
 
 // Floating mountain silhouette
 function FloatingElement({
@@ -114,6 +115,7 @@ function MagneticButton({
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { openSearch } = useSearch();
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [videoReady, setVideoReady] = useState(false);
@@ -279,6 +281,11 @@ export function HeroSection() {
               className="absolute right-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold rounded-xl"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                if (searchValue.trim()) {
+                  openSearch(searchValue.trim());
+                }
+              }}
             >
               Search
             </motion.button>
