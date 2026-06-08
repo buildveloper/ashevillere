@@ -58,7 +58,11 @@ function getFallbackResponse(message: string, pathname: string): string {
   const msg = message.toLowerCase();
 
   if (msg.includes("str") || msg.includes("airbnb") || msg.includes("short-term") || msg.includes("rental")) {
-    return "Asheville STR regulations vary by neighborhood. Downtown and the River Arts District are fully permitted (estimated $55K-$65K/yr revenue). Most residential neighborhoods allow only homestays (owner-occupied, 2 bedrooms max). Biltmore Forest prohibits STRs entirely. I'd recommend checking the **STR Insights** page for the full breakdown — it has neighborhood-by-neighborhood scores and a regulation comparison.";
+    return "Asheville STR regulations vary by neighborhood. Downtown and the River Arts District are fully permitted (estimated $55K-$65K/yr revenue). Most residential neighborhoods allow only homestays (owner-occupied, 2 bedrooms max). Biltmore Forest prohibits STRs entirely. I'd recommend checking the **STR Insights** page for the full breakdown — it has neighborhood-by-neighborhood scores and a regulation comparison. You can also download a personalized STR Investment Report PDF from any neighborhood page or the STR Insights page.";
+  }
+
+  if (msg.includes("pdf") || msg.includes("report") || msg.includes("download")) {
+    return "You can generate professional PDF reports across the entire site! Available reports: **Market Report** (from /market-reports), **Neighborhood Deep Dive** (from any neighborhood page), **STR Investment Report** (from /str-insights), **Home Value Report** (from the Tools page), and **Relocation Checklist Report** (from the Relocation Checklist). All are free, branded, and available with one click. Which report would you like to generate?";
   }
 
   if (msg.includes("neighborhood") || msg.includes("best") || msg.includes("where") || msg.includes("area")) {

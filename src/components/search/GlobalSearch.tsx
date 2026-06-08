@@ -75,6 +75,7 @@ const TYPE_CONFIG: Record<ResultType, { label: string; color: string; bg: string
   "str-info": { label: "STR Info", color: "text-pink-400", bg: "bg-pink-500/10 border-pink-500/20" },
   resource: { label: "Resource", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
   page: { label: "Page", color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/20" },
+  article: { label: "Article", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
 };
 
 // ─── Context to expose openSearch globally ───

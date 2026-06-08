@@ -27,6 +27,7 @@ const NAV_LINKS = [
   { href: "/tools", label: "Tools", icon: Wrench },
   { href: "/str-insights", label: "STR Insights", icon: BarChart3 },
   { href: "/resources", label: "Resources", icon: BookOpen },
+  { href: "/blog", label: "Blog", icon: BookOpen },
 ];
 
 // Stagger animation for nav links

@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, TrendingUp, Star, Save, CheckCircle2, ArrowRight } from "lucide-react";
+import { Home, TrendingUp, Star, Save, CheckCircle2, ArrowRight, Download, FileText, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useCountUp } from "@/hooks/use-animations";
 import { NEIGHBORHOODS } from "@/lib/neighborhoods";
+import { PDFGenerationModal } from "@/components/pdf/PDFGenerationModal";
 
 const CONDITIONS = ["Excellent", "Good", "Average", "Needs Work", "Fixer"] as const;
 type Condition = (typeof CONDITIONS)[number];
@@ -121,6 +122,7 @@ export function HomeValueEstimator() {
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>([]);
+  const [showPDFModal, setShowPDFModal] = useState(false);
 
   const countLow = useCountUp(result?.low ?? 0, 1800, showResult);
   const countMid = useCountUp(result?.mid ?? 0, 1800, showResult);
@@ -385,6 +387,16 @@ export function HomeValueEstimator() {
                   Save Estimate
                 </motion.button>
 
+                <motion.button
+                  onClick={() => setShowPDFModal(true)}
+                  className="mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <FileText className="w-4 h-4" strokeWidth={1.5} />
+                  Download Value Report
+                </motion.button>
+
                 <div className="mt-4 text-center">
                   <Link
                     href={`/neighborhoods/${neighborhood}`}
@@ -419,6 +431,27 @@ export function HomeValueEstimator() {
           localStorage.removeItem("avre_saved_estimates");
         }}
       />
+
+      {result && (
+        <PDFGenerationModal
+          isOpen={showPDFModal}
+          onClose={() => setShowPDFModal(false)}
+          reportType="home-value-report"
+          reportData={{
+            address,
+            neighborhood: NEIGHBORHOODS.find((n) => n.id === neighborhood)?.name ?? neighborhood,
+            sqft,
+            beds,
+            baths,
+            year,
+            condition,
+            estimate: { low: result.low, mid: result.mid, high: result.high, confidence: result.confidence },
+            generatedAt: new Date().toISOString(),
+          }}
+          title="Home Value Report"
+          subtitle={(address || NEIGHBORHOODS.find((n) => n.id === neighborhood)?.name) ?? "Asheville Property"}
+        />
+      )}
     </div>
   );
 }

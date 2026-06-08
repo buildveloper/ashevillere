@@ -14,7 +14,18 @@ import { StatsDashboard } from "@/components/market-reports/StatsDashboard";
 import { MarketTrendCharts } from "@/components/market-reports/MarketTrendCharts";
 import { MarketInsights } from "@/components/market-reports/MarketInsights";
 import { DownloadCTA } from "@/components/market-reports/DownloadCTA";
+import { NEIGHBORHOODS } from "@/lib/neighborhoods";
 import { useState, useCallback } from "react";
+
+const DEFAULT_STATS = {
+  medianPrice: 525000,
+  avgDaysOnMarket: 28,
+  activeListings: 1247,
+  avgPricePerSqft: 312,
+  monthsInventory: 2.8,
+  yoyAppreciation: 8.2,
+  lastUpdated: new Date().toISOString(),
+};
 
 function RefreshButton({
   onRefresh,
@@ -170,7 +181,7 @@ export default function MarketReportsPage() {
       {/* ============================================ */}
       {/* DOWNLOAD CTA */}
       {/* ============================================ */}
-      <DownloadCTA />
+      <DownloadCTA stats={DEFAULT_STATS} neighborhoods={NEIGHBORHOODS} />
 
       {/* ============================================ */}
       {/* QUICK LINKS (Next steps after viewing reports) */}

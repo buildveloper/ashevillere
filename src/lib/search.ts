@@ -3,6 +3,7 @@
 
 import { NEIGHBORHOODS, type NeighborhoodDetail } from "@/lib/neighborhoods";
 import { LISTINGS, type Listing } from "@/lib/listings";
+import { getAllPosts, BLOG_POSTS, type BlogPost } from "@/lib/blog";
 
 export type ResultType =
   | "neighborhood"
@@ -11,7 +12,8 @@ export type ResultType =
   | "market-insight"
   | "str-info"
   | "resource"
-  | "page";
+  | "page"
+  | "article";
 
 export interface SearchResult {
   id: string;
@@ -293,6 +295,26 @@ function neighborhoodToResult(n: NeighborhoodDetail): SearchResult {
   };
 }
 
+function blogPostToResult(p: BlogPost): SearchResult {
+  const categoryLabels: Record<string, string> = {
+    "market-trends": "Market Trends",
+    neighborhoods: "Neighborhoods",
+    "str-airbnb": "STR & Airbnb",
+    relocation: "Relocation",
+    investing: "Investing",
+    lifestyle: "Lifestyle",
+  };
+  return {
+    id: `article-${p.slug}`,
+    type: "article",
+    title: p.title,
+    subtitle: `${categoryLabels[p.category] || p.category} · ${p.readTime} min read · ${p.author.name}`,
+    href: `/blog/${p.slug}`,
+    keywords: [p.title, p.excerpt, ...p.tags, p.category, p.author.name],
+    icon: "BookOpen",
+  };
+}
+
 function listingToResult(l: Listing): SearchResult {
   const priceStr = l.price >= 1_000_000
     ? `$${(l.price / 1_000_000).toFixed(2)}M`
@@ -320,6 +342,7 @@ function listingToResult(l: Listing): SearchResult {
 }
 
 export function buildSearchIndex(): SearchResult[] {
+  const articles = BLOG_POSTS.map(blogPostToResult);
   return [
     ...NEIGHBORHOODS.map(neighborhoodToResult),
     ...LISTINGS.map(listingToResult),
@@ -328,6 +351,7 @@ export function buildSearchIndex(): SearchResult[] {
     ...STR_RESULTS,
     ...RESOURCE_RESULTS,
     ...PAGE_RESULTS,
+    ...articles,
   ];
 }
 

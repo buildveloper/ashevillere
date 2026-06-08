@@ -23,7 +23,10 @@ import {
   Sparkles,
   BarChart3,
   BookOpen,
+  FileText,
+  Download,
 } from "lucide-react";
+import { PDFGenerationModal } from "@/components/pdf/PDFGenerationModal";
 import { useInView, useCountUp } from "@/hooks/use-animations";
 import {
   NEIGHBORHOODS,
@@ -138,9 +141,21 @@ export default function NeighborhoodDetailPage({
   }
 
   const n = neighborhood;
+  const [showPDFModal, setShowPDFModal] = useState(false);
 
   return (
     <>
+      <PDFGenerationModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        reportType="neighborhood-report"
+        reportData={{
+          neighborhood: n,
+          generatedAt: new Date().toISOString(),
+        }}
+        title={`${n.name} Report`}
+        subtitle={`Neighborhood Deep Dive · ${new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}`}
+      />
       {/* ============================================ */}
       {/* HERO SECTION */}
       {/* ============================================ */}
@@ -624,6 +639,23 @@ export default function NeighborhoodDetailPage({
                 Estimate {n.name} Home Value
                 <ArrowRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
               </Link>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.35 }}
+            >
+              <motion.button
+                onClick={() => setShowPDFModal(true)}
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:from-emerald-400 hover:to-cyan-500 transition-all duration-300 group"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <FileText className="w-4 h-4" strokeWidth={1.5} />
+                Download {n.name} Report
+                <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" strokeWidth={1.5} />
+              </motion.button>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 15 }}

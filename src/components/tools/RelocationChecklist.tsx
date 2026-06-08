@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useInView } from "@/hooks/use-animations";
+import { PDFGenerationModal } from "@/components/pdf/PDFGenerationModal";
 
 interface ChecklistItem {
   id: string;
@@ -118,6 +119,7 @@ const STORAGE_KEY = "avre_relocation_checklist";
 export function RelocationChecklist() {
   const [categories, setCategories] = useState<ChecklistCategory[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [showPDFModal, setShowPDFModal] = useState(false);
   const { ref, inView } = useInView(0.05);
 
   useEffect(() => {
@@ -168,15 +170,8 @@ export function RelocationChecklist() {
   };
 
   const handleGeneratePDF = () => {
-    // Simulated PDF generation
-    const btn = document.activeElement as HTMLButtonElement;
-    if (btn) {
-      const originalText = btn.innerHTML;
-      btn.innerHTML = "Generating...";
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-      }, 2000);
-    }
+    if (totalItems === 0) return;
+    setShowPDFModal(true);
   };
 
   if (!loaded) {
@@ -354,6 +349,27 @@ export function RelocationChecklist() {
           <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
         </Link>
       </div>
+
+      <PDFGenerationModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        reportType="relocation-report"
+        reportData={{
+          categories: categories.map((cat) => ({
+            title: cat.title,
+            items: cat.items.map((item) => ({
+              text: item.text,
+              completed: item.completed,
+            })),
+          })),
+          progressPct,
+          completedItems,
+          totalItems,
+          generatedAt: new Date().toISOString(),
+        }}
+        title="Relocation Checklist"
+        subtitle={`${progressPct}% Complete · ${completedItems}/${totalItems} tasks`}
+      />
     </div>
   );
 }

@@ -38,6 +38,7 @@ Keep responses under 3 paragraphs. Use a warm, knowledgeable tone — you're a l
       { text: "How are STR regulations in Asheville?" },
       { text: "What's the current market trend?" },
       { text: "Compare West Asheville vs Downtown" },
+      { text: "Generate a market report PDF" },
     ],
     quickActions: [
       { label: "Neighborhoods", href: "/neighborhoods", icon: "Building2" },
@@ -165,6 +166,40 @@ When they ask for "homes under $X" or "homes in [neighborhood]", offer to naviga
       { label: "STR Insights", href: "/str-insights", icon: "BarChart3" },
       { label: "Tools", href: "/tools", icon: "Wrench" },
       { label: "Neighborhoods", href: "/neighborhoods", icon: "Building2" },
+    ],
+  },
+  {
+    routePattern: "/blog/",
+    systemPrompt: `You are AshevilleRE AI, helping a user reading a blog article on the AshevilleRE website. They're interested in Asheville real estate topics — market trends, neighborhoods, STR regulations, relocation, investing, and lifestyle. Your job is to help them go deeper: suggest related articles, answer follow-up questions about the topic they're reading, and connect them to relevant tools and resources on the site. Be concise, data-driven, and always offer to take them to a related page or tool.`,
+    greeting: "Reading this article? I can help you go deeper on this topic. Ask me follow-up questions, and I'll connect you to related articles, tools, or neighborhood data.",
+    suggestions: [
+      { text: "Show me more articles like this one" },
+      { text: "How does this relate to my situation?" },
+      { text: "What tools can help me with this?" },
+      { text: "Latest market data on this topic" },
+    ],
+    quickActions: [
+      { label: "All Articles", href: "/blog", icon: "BookOpen" },
+      { label: "Market Reports", href: "/market-reports", icon: "TrendingUp" },
+      { label: "Tools & Calculators", href: "/tools", icon: "Wrench" },
+      { label: "STR Insights", href: "/str-insights", icon: "BarChart3" },
+    ],
+  },
+  {
+    routePattern: "/blog",
+    systemPrompt: `You are AshevilleRE AI, helping a user browsing the AshevilleRE blog. They can explore articles about Asheville real estate — market reports, neighborhood guides, STR regulations, relocation checklists, investing strategies, and lifestyle features. Help them find articles relevant to their interests. When they ask about specific topics (e.g. "market news", "moving tips", "STR rules", "best neighborhoods"), recommend specific blog posts and offer to take them there. You know the full catalog of blog posts and their content.`,
+    greeting: "Browsing the blog? I know every article we publish. Tell me what you're interested in — market trends, moving tips, STR rules, or neighborhood guides — and I'll point you to the best reads.",
+    suggestions: [
+      { text: "Latest Asheville market news" },
+      { text: "Relocation tips for moving to Asheville" },
+      { text: "New STR rules explained" },
+      { text: "Best neighborhoods for families" },
+    ],
+    quickActions: [
+      { label: "Market Trends", href: "/blog?category=market-trends", icon: "TrendingUp" },
+      { label: "Neighborhoods", href: "/blog?category=neighborhoods", icon: "Building2" },
+      { label: "STR & Airbnb", href: "/blog?category=str-airbnb", icon: "BarChart3" },
+      { label: "Relocation", href: "/blog?category=relocation", icon: "BookOpen" },
     ],
   },
 ];

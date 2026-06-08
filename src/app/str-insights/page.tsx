@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { useInView, useCountUp } from "@/hooks/use-animations";
 import { NEIGHBORHOODS, type NeighborhoodDetail } from "@/lib/neighborhoods";
-import { AIChatbot } from "@/components/home/AIChatbot";
+import { PDFGenerationModal } from "@/components/pdf/PDFGenerationModal";
 
 function formatPrice(price: number): string {
   if (price >= 1000000) return `$${(price / 1000000).toFixed(1)}M`;
@@ -270,7 +270,7 @@ function STRInsightsContent() {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<NeighborhoodDetail | null>(
     () => NEIGHBORHOODS.find((n) => n.id === preselectedId) || null
   );
-  const [showReportModal, setShowReportModal] = useState(false);
+  const [showPDFModal, setShowPDFModal] = useState(false);
   const { ref: heroRef, inView: heroInView } = useInView(0.1);
 
   const sortedByStr = useMemo(
@@ -976,7 +976,7 @@ function STRInsightsContent() {
                 Includes revenue projections, regulation summary, and investment metrics.
               </p>
               <motion.button
-                onClick={() => setShowReportModal(true)}
+                onClick={() => setShowPDFModal(true)}
                 className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white font-semibold shadow-xl shadow-emerald-500/25 hover:from-emerald-400 hover:to-cyan-500 transition-all duration-300 group"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -991,71 +991,17 @@ function STRInsightsContent() {
         </div>
       </section>
 
-      {/* Report generation modal */}
-      <AnimatePresence>
-        {showReportModal && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowReportModal(false)}
-            />
-            <motion.div
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md glass-strong rounded-2xl p-8 shadow-2xl"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              <div className="text-center">
-                <motion.div
-                  className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-400/20 flex items-center justify-center mx-auto mb-5"
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <FileText className="w-8 h-8 text-emerald-400" strokeWidth={1.5} />
-                </motion.div>
-                <h3 className="font-display text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  STR Report Coming Soon
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                  We&apos;re building a comprehensive PDF report generator. Enter your email and we&apos;ll
-                  notify you when it&apos;s ready — plus send you a free Asheville STR market overview.
-                </p>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setShowReportModal(false);
-                  }}
-                  className="space-y-3"
-                >
-                  <input
-                    type="email"
-                    placeholder="you@email.com"
-                    className="w-full px-4 py-3 rounded-xl glass text-sm text-gray-900 dark:text-white placeholder:text-slate-400 border border-[var(--color-glass-border)] focus:outline-none focus:border-emerald-500/30"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:from-emerald-400 hover:to-cyan-500 transition-all duration-300 group"
-                  >
-                    <Send className="w-4 h-4" strokeWidth={1.5} />
-                    Notify Me
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
-                  </button>
-                </form>
-                <button
-                  onClick={() => setShowReportModal(false)}
-                  className="mt-3 text-xs text-slate-500 hover:text-slate-400 transition-colors"
-                >
-                  Maybe later
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <PDFGenerationModal
+        isOpen={showPDFModal}
+        onClose={() => setShowPDFModal(false)}
+        reportType="str-report"
+        reportData={{
+          neighborhood: selectedNeighborhood || NEIGHBORHOODS[0],
+          generatedAt: new Date().toISOString(),
+        }}
+        title="STR Investment Report"
+        subtitle={selectedNeighborhood?.name ?? "Asheville STR Analysis"}
+      />
 
       {/* ============================================ */}
       {/* BOTTOM NAVIGATION */}
