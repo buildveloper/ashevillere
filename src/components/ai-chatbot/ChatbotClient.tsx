@@ -154,9 +154,7 @@ export function ChatbotClient() {
         { role: "assistant", content: data.content },
       ]);
     } catch {
-      setError("Couldn't reach Ollama. Showing offline response.");
-      // The API already returns a fallback, so we may not reach here
-      // but we have this as safety net
+      setError("Couldn't reach the AI service. Showing offline response.");
       setMessages((prev) => [
         ...prev,
         {
@@ -197,7 +195,7 @@ export function ChatbotClient() {
           ]);
         })
         .catch(() => {
-          setError("Couldn't reach Ollama. Showing offline response.");
+          setError("Couldn't reach the AI service. Showing offline response.");
         })
         .finally(() => setIsTyping(false));
     }, 100);
@@ -232,7 +230,7 @@ export function ChatbotClient() {
             ]);
           })
           .catch(() => {
-            setError("Still having trouble. Try again or check if Ollama is running.");
+            setError("Still having trouble. Please try again.");
           })
           .finally(() => setIsTyping(false));
       }, 50);

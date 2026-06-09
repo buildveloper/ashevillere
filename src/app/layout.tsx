@@ -1,10 +1,27 @@
 import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ChatbotClient } from "@/components/ai-chatbot/ChatbotClient";
 import { SearchProvider } from "@/components/search/GlobalSearch";
+import { JsonLd } from "@/components/seo/JsonLd";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+});
 
 export const metadata: Metadata = {
   title: {
@@ -13,15 +30,35 @@ export const metadata: Metadata = {
   },
   description:
     "AshevilleRE delivers premium real estate intelligence for Asheville, NC. Explore market reports, neighborhood guides, STR insights, and powerful tools.",
-  keywords: ["Asheville", "real estate", "market reports", "neighborhoods", "STR", "North Carolina"],
   metadataBase: new URL("https://ashevillere.com"),
+  robots: { index: true, follow: true },
+  alternates: { canonical: "https://ashevillere.com" },
   openGraph: {
     title: "AshevilleRE — Premium Real Estate Intelligence",
     description:
-      "AshevilleRE delivers premium real estate intelligence for Asheville, NC.",
+      "AshevilleRE delivers premium real estate intelligence for Asheville, NC. Market reports, neighborhood guides, STR insights, and tools.",
+    url: "https://ashevillere.com",
     siteName: "AshevilleRE",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "https://ashevillere.com/og?title=AshevilleRE&subtitle=Premium+Real+Estate+Intelligence&tag=ASHEVILLE+NC",
+        width: 1200,
+        height: 630,
+        alt: "AshevilleRE — Premium Real Estate Intelligence",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AshevilleRE — Premium Real Estate Intelligence",
+    description:
+      "AshevilleRE delivers premium real estate intelligence for Asheville, NC.",
+    images: ["https://ashevillere.com/og?title=AshevilleRE&subtitle=Premium+Real+Estate+Intelligence&tag=ASHEVILLE+NC"],
+  },
+  verification: {
+    google: "google-site-verification-placeholder",
   },
 };
 
@@ -31,14 +68,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap"
-          rel="stylesheet"
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -53,7 +84,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen flex flex-col antialiased">
+      <body className="min-h-screen flex flex-col antialiased font-sans">
         <ThemeProvider>
           <SearchProvider>
             <Navbar />
@@ -62,6 +93,17 @@ export default function RootLayout({
             <ChatbotClient />
           </SearchProvider>
         </ThemeProvider>
+        <JsonLd data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "AshevilleRE",
+          url: "https://ashevillere.com",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://ashevillere.com/?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }} />
       </body>
     </html>
   );

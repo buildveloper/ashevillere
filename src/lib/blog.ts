@@ -137,7 +137,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "market-trends",
     date: "2026-05-15",
     readTime: 8,
-    author: { name: "Alex Chen", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: true,
     tags: ["market report", "Q2 2026", "median price", "inventory", "appreciation", "buyer guide", "seller guide"],
     relatedPostSlugs: [
@@ -277,7 +277,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "neighborhoods",
     date: "2026-05-20",
     readTime: 10,
-    author: { name: "Sarah Mitchell", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: true,
     tags: ["families", "neighborhoods", "schools", "parks", "safety", "community", "kids"],
     relatedPostSlugs: [
@@ -407,7 +407,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "str-airbnb",
     date: "2026-04-10",
     readTime: 7,
-    author: { name: "Alex Chen", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: false,
     tags: ["STR", "Airbnb", "regulations", "permit", "homestay", "whole-home", "compliance", "investment"],
     relatedPostSlugs: [
@@ -530,7 +530,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "relocation",
     date: "2026-05-01",
     readTime: 12,
-    author: { name: "Sarah Mitchell", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: true,
     tags: ["relocation", "moving", "checklist", "new resident", "settling in", "utilities", "schools"],
     relatedPostSlugs: [
@@ -654,7 +654,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "investing",
     date: "2026-04-22",
     readTime: 9,
-    author: { name: "Alex Chen", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: false,
     tags: ["investing", "ROI", "appreciation", "rental yield", "STR", "long-term rental", "flipping"],
     relatedPostSlugs: [
@@ -770,7 +770,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "lifestyle",
     date: "2026-04-05",
     readTime: 6,
-    author: { name: "Sarah Mitchell", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: false,
     tags: ["River Arts District", "RAD", "artists", "lofts", "creative living", "studios", "hidden gems"],
     relatedPostSlugs: [
@@ -866,7 +866,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "market-trends",
     date: "2026-03-18",
     readTime: 7,
-    author: { name: "Alex Chen", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: false,
     tags: ["Helene", "recovery", "market impact", "renovation", "infrastructure", "resilience"],
     relatedPostSlugs: [
@@ -974,7 +974,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "market-trends",
     date: "2026-03-05",
     readTime: 6,
-    author: { name: "Sarah Mitchell", avatar: AUTHOR_AVATAR },
+    author: { name: "Chris", avatar: AUTHOR_AVATAR },
     featured: false,
     tags: ["spring market", "home buying", "tips", "offer strategy", "first-time buyer", "pre-approval"],
     relatedPostSlugs: [

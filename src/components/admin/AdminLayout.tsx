@@ -13,15 +13,21 @@ import {
   X,
   Check,
   AlertCircle,
+  Sparkles,
+  PlusCircle,
+  Download,
 } from "lucide-react";
 
-type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings";
+export type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings" | "ai" | "listings" | "import";
 
 const SIDEBAR_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "market", label: "Market Stats", icon: TrendingUp },
   { id: "neighborhoods", label: "Neighborhoods", icon: Building2 },
   { id: "blog", label: "Blog Posts", icon: FileText },
+  { id: "ai", label: "AI Content", icon: Sparkles },
+  { id: "listings", label: "Listings", icon: PlusCircle },
+  { id: "import", label: "Data Import", icon: Download },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 

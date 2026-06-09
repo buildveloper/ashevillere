@@ -2,18 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings } from "lucide-react";
+import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings, PenLine, PlusCircle, Download } from "lucide-react";
 import {
   AdminSidebar,
   AdminToast,
   useAdminAPI,
+  type Section,
 } from "@/components/admin/AdminLayout";
 import { MarketStatsPanel } from "@/components/admin/MarketStatsPanel";
 import { NeighborhoodPanel } from "@/components/admin/NeighborhoodPanel";
 import { BlogManagerPanel } from "@/components/admin/BlogManagerPanel";
 import { SettingsPanel } from "@/components/admin/SettingsPanel";
-
-type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings";
+import { AIContentPanel } from "@/components/admin/AIContentPanel";
+import { ListingSubmissionPanel } from "@/components/admin/ListingSubmissionPanel";
+import { DataImportPanel } from "@/components/admin/DataImportPanel";
 
 function LoginGate({ onLogin }: { onLogin: () => void }) {
   const api = useAdminAPI();
@@ -188,6 +190,12 @@ export default function AdminPage() {
         return <NeighborhoodPanel />;
       case "blog":
         return <BlogManagerPanel />;
+      case "ai":
+        return <AIContentPanel />;
+      case "listings":
+        return <ListingSubmissionPanel />;
+      case "import":
+        return <DataImportPanel />;
       case "settings":
         return <SettingsPanel />;
       default:
@@ -238,6 +246,9 @@ const QUICK_ACTIONS: { label: string; section: Section; description: string; ico
   { label: "Market Stats", section: "market", description: "Edit median price, DOM, inventory, appreciation", icon: TrendingUp },
   { label: "Neighborhoods", section: "neighborhoods", description: "Update all 8 neighborhood profiles and data", icon: Building2 },
   { label: "Blog Posts", section: "blog", description: "Create, edit, and manage blog articles", icon: FileText },
+  { label: "AI Content", section: "ai", description: "Generate SEO blog posts with Groq AI", icon: PenLine },
+  { label: "Listings", section: "listings", description: "Add home listings + review public FSBO submissions", icon: PlusCircle },
+  { label: "Data Import", section: "import", description: "Import public data from county records, CSV, Craigslist", icon: Download },
   { label: "Site Settings", section: "settings", description: "Timestamps, data export, and system info", icon: Settings },
 ];
 

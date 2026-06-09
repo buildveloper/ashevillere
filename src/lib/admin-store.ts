@@ -157,6 +157,79 @@ export function updateSiteSettings(updates: Partial<SiteSettings>): SiteSettings
   return updated;
 }
 
+// ─── Listings (Admin-managed + user submissions) ─────────────────────────────
+
+import type { Listing } from "@/lib/listings";
+
+export interface ListingSubmission {
+  id: string;
+  title: string;
+  price: number;
+  address: string;
+  neighborhood: string;
+  neighborhoodId: string;
+  beds: number;
+  baths: number;
+  sqft: number;
+  propertyType: string;
+  yearBuilt: number;
+  description: string;
+  imageUrls: string[];
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  status: "pending" | "approved" | "rejected";
+  trackingNumber: string;
+  submittedAt: string;
+}
+
+export function getListingSubmissions(): ListingSubmission[] {
+  return readJSON<ListingSubmission[]>("listing-submissions.json", []);
+}
+
+export function saveListingSubmission(submission: ListingSubmission): ListingSubmission {
+  const subs = getListingSubmissions();
+  subs.push(submission);
+  writeJSON("listing-submissions.json", subs);
+  return submission;
+}
+
+export function updateListingSubmission(
+  trackingNumber: string,
+  updates: Partial<ListingSubmission>
+): ListingSubmission | null {
+  const subs = getListingSubmissions();
+  const idx = subs.findIndex((s) => s.trackingNumber === trackingNumber);
+  if (idx === -1) return null;
+  subs[idx] = { ...subs[idx], ...updates };
+  writeJSON("listing-submissions.json", subs);
+  return subs[idx];
+}
+
+export function getAdminListings(): Listing[] {
+  return readJSON<Listing[]>("admin-listings.json", []);
+}
+
+export function saveAdminListing(listing: Listing): Listing {
+  const listings = getAdminListings();
+  const idx = listings.findIndex((l) => l.id === listing.id);
+  if (idx >= 0) {
+    listings[idx] = listing;
+  } else {
+    listings.push(listing);
+  }
+  writeJSON("admin-listings.json", listings);
+  return listing;
+}
+
+export function deleteAdminListing(id: string): boolean {
+  const listings = getAdminListings();
+  const filtered = listings.filter((l) => l.id !== id);
+  if (filtered.length === listings.length) return false;
+  writeJSON("admin-listings.json", filtered);
+  return true;
+}
+
 // ─── Bulk Export/Import ──────────────────────────────────────────────────────
 
 export function exportAllData() {

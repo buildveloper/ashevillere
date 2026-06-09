@@ -28,6 +28,7 @@ const NAV_LINKS = [
   { href: "/str-insights", label: "STR Insights", icon: BarChart3 },
   { href: "/resources", label: "Resources", icon: BookOpen },
   { href: "/blog", label: "Blog", icon: BookOpen },
+  { href: "/submit-listing", label: "Submit Your Home", icon: Home },
 ];
 
 // Stagger animation for nav links
@@ -229,6 +230,9 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+
+  // Hide navbar on admin pages
+  if (pathname.startsWith("/admin")) return null;
 
   // Track scroll for glass intensification
   useEffect(() => {

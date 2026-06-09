@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { MapPin, Mail, ArrowUpRight } from "lucide-react";
 
@@ -11,6 +12,7 @@ const FOOTER_COLUMNS = [
       { href: "/", label: "Home" },
       { href: "/market-reports", label: "Market Reports" },
       { href: "/neighborhoods", label: "Neighborhoods" },
+      { href: "/submit-listing", label: "Submit Your Home" },
     ],
   },
   {
@@ -26,7 +28,7 @@ const FOOTER_COLUMNS = [
     links: [
       { href: "/privacy", label: "Privacy Policy" },
       { href: "/terms", label: "Terms of Service" },
-      { href: "/disclaimer", label: "Disclaimer" },
+      { href: "/affiliate-disclosure", label: "Affiliate Disclosure" },
       { href: "/admin", label: "Admin" },
     ],
   },
@@ -56,6 +58,9 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 }
 
 export function Footer() {
+  const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
+
   return (
     <footer className="relative border-t border-[var(--color-glass-border)]">
       {/* Subtle top gradient */}

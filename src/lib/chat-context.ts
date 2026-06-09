@@ -202,6 +202,70 @@ When they ask for "homes under $X" or "homes in [neighborhood]", offer to naviga
       { label: "Relocation", href: "/blog?category=relocation", icon: "BookOpen" },
     ],
   },
+  {
+    routePattern: "/privacy",
+    systemPrompt: `You are AshevilleRE AI, assisting a visitor reading our Privacy Policy. They may have questions about data collection, cookies, LocalStorage, Google Analytics settings, or their privacy rights. Reference specific details: we use Google Analytics 4 with IP anonymization enabled and 2-month data retention, only essential cookies for theme preference, and LocalStorage for theme, recent searches, and tool inputs. We never sell data. Refer them to the relevant section of the policy when possible.`,
+    greeting: "Reading our Privacy Policy? I can help clarify anything. Ask me about how we handle data, our use of Google Analytics, cookie policies, or your privacy rights.",
+    suggestions: [
+      { text: "Do you sell my personal data?" },
+      { text: "What cookies do you use?" },
+      { text: "How can I opt out of analytics?" },
+      { text: "What data is stored in my browser?" },
+    ],
+    quickActions: [
+      { label: "Home", href: "/", icon: "Home" },
+      { label: "Terms of Service", href: "/terms", icon: "Scale" },
+      { label: "Affiliate Disclosure", href: "/affiliate-disclosure", icon: "Heart" },
+    ],
+  },
+  {
+    routePattern: "/terms",
+    systemPrompt: `You are AshevilleRE AI, assisting a visitor reading our Terms of Service. They may have questions about their rights, limitations of liability, tool disclaimers, intellectual property, or our recommendation policies. Reference specific terms: our tools are estimates only, we are not financial/real estate advisors, AI chatbot responses should be independently verified, and we limit our liability to the maximum extent permitted by law. Always clarify that you cannot provide legal interpretation of the Terms.`,
+    greeting: "Reviewing our Terms? I can help explain what things mean — though I can't give legal advice. Ask me about tool disclaimers, your rights, or our policies.",
+    suggestions: [
+      { text: "Is the Home Value Estimator accurate?" },
+      { text: "Are you a real estate brokerage?" },
+      { text: "What happens if market data is wrong?" },
+      { text: "Can I use your content elsewhere?" },
+    ],
+    quickActions: [
+      { label: "Home", href: "/", icon: "Home" },
+      { label: "Privacy Policy", href: "/privacy", icon: "Shield" },
+      { label: "Tools & Calculators", href: "/tools", icon: "Wrench" },
+    ],
+  },
+  {
+    routePattern: "/affiliate-disclosure",
+    systemPrompt: `You are AshevilleRE AI, assisting a visitor reading our Affiliate Disclosure. They may have questions about how we earn revenue, FTC compliance, our recommendation philosophy, or specific affiliate partners (TurboTenant, Buildium, PriceLabs, BiggerPockets, Steadily, Amazon Associates). Emphasize our commitment: we only recommend tools we believe in, we never accept payment for recommendations, and our links never cost the user extra. All earnings figures are illustrative estimates, not guarantees.`,
+    greeting: "Curious about how we make money? I'm happy to explain our affiliate partnerships. We believe in full transparency — ask me anything about our disclosure.",
+    suggestions: [
+      { text: "Do you get paid for recommendations?" },
+      { text: "Do I pay more using your links?" },
+      { text: "What's your best property management pick?" },
+      { text: "How do you choose what to recommend?" },
+    ],
+    quickActions: [
+      { label: "Resources", href: "/resources", icon: "BookOpen" },
+      { label: "Home", href: "/", icon: "Home" },
+      { label: "Tools & Calculators", href: "/tools", icon: "Wrench" },
+    ],
+  },
+  {
+    routePattern: "/submit-listing",
+    systemPrompt: `You are AshevilleRE AI, assisting a visitor on the Submit Your Home page. They're likely a FSBO (For Sale By Owner) seller interested in listing their property on AshevilleRE for free. Help them understand the submission process: listings are reviewed within 24-48 hours, they need to provide title, price, address, neighborhood, and property details. Contact info is optional but recommended. Listings are free. AshevilleRE is not a brokerage — we provide a platform for exposure, not representation.`,
+    greeting: "Thinking about listing your home? I can walk you through what to include, how the review process works, and what happens after you submit. Ask me anything!",
+    suggestions: [
+      { text: "What info do I need to submit a listing?" },
+      { text: "How long does the review take?" },
+      { text: "Is it really free to list my home?" },
+      { text: "What happens after my listing goes live?" },
+    ],
+    quickActions: [
+      { label: "Browse Homes", href: "/homes-for-sale", icon: "Home" },
+      { label: "Neighborhoods", href: "/neighborhoods", icon: "Building2" },
+      { label: "Home Value Estimator", href: "/tools", icon: "Wrench" },
+    ],
+  },
 ];
 
 export function getPageContext(pathname: string): PageContext {
