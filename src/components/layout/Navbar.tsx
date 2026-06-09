@@ -231,9 +231,6 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hide navbar on admin pages
-  if (pathname.startsWith("/admin")) return null;
-
   // Track scroll for glass intensification
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -246,6 +243,8 @@ export function Navbar() {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
+
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <>

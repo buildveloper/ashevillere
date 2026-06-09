@@ -59,15 +59,16 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 
 export function Footer() {
   const pathname = usePathname();
-  if (pathname.startsWith("/admin")) return null;
+
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <footer className="relative border-t border-[var(--color-glass-border)]">
-      {/* Subtle top gradient */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        {/* Top section */}
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12"
           variants={{
@@ -78,7 +79,6 @@ export function Footer() {
           whileInView="show"
           viewport={{ once: true, margin: "-50px" }}
         >
-          {/* Brand column */}
           <motion.div
             className="col-span-2 md:col-span-1"
             variants={{
@@ -108,7 +108,6 @@ export function Footer() {
             </div>
           </motion.div>
 
-          {/* Link columns */}
           {FOOTER_COLUMNS.map((col) => (
             <motion.div
               key={col.title}
@@ -138,7 +137,6 @@ export function Footer() {
           ))}
         </motion.div>
 
-        {/* Bottom bar */}
         <motion.div
           className="mt-12 pt-6 border-t border-[var(--color-glass-border)] flex flex-col sm:flex-row items-center justify-between gap-3"
           initial={{ opacity: 0 }}
