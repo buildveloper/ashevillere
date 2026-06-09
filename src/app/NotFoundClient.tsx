@@ -180,7 +180,7 @@ export function NotFoundClient() {
           transition={{ duration: 0.4, delay: 0.7 }}
         >
           <a
-            href="mailto:hello@ashevillere.com?subject=Broken%20Link%20Report&body=I%20encountered%20a%20broken%20link%20while%20trying%20to%20reach%3A%20%0A%0A%5BPlease%20describe%20the%20page%20you%20were%20trying%20to%20reach%5D"
+            href="mailto:chris@ashevillere.com?subject=Broken%20Link%20Report&body=I%20encountered%20a%20broken%20link%20while%20trying%20to%20reach%3A%20%0A%0A%5BPlease%20describe%20the%20page%20you%20were%20trying%20to%20reach%5D"
             className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-emerald-400 transition-colors"
           >
             <AlertCircle className="w-3.5 h-3.5" strokeWidth={1.5} />

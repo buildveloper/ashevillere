@@ -9,11 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/pdfkit": "^0.17.6",
     "framer-motion": "^12.0.0",
     "groq-sdk": "^1.2.1",
     "lucide-react": "^0.468.0",
     "next": "^15.2.0",
     "next-themes": "^0.4.4",
+    "pdfkit": "^0.19.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.8.1"

@@ -115,7 +115,7 @@ export function AffiliateDisclosureContent() {
         <li>
           <strong>We welcome scrutiny.</strong> If you believe a recommendation on this
           Site is biased or unsubstantiated, please email us at{" "}
-          <a href="mailto:hello@ashevillere.com">hello@ashevillere.com</a>. We will
+          <a href="mailto:chris@ashevillere.com">chris@ashevillere.com</a>. We will
           re-evaluate any recommendation that raises legitimate concerns.
         </li>
       </ul>
@@ -241,7 +241,7 @@ export function AffiliateDisclosureContent() {
       <ul>
         <li>
           <strong>Email:</strong>{" "}
-          <a href="mailto:hello@ashevillere.com">hello@ashevillere.com</a>
+          <a href="mailto:chris@ashevillere.com">chris@ashevillere.com</a>
         </li>
         <li>
           <strong>Subject line:</strong> Please include &ldquo;Affiliate Disclosure&rdquo;

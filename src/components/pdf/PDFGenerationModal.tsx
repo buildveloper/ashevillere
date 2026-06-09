@@ -13,10 +13,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { ReportType, ReportPayload } from "@/lib/report-templates";
+import { canGeneratePDF, recordPDFGeneration, remainingGenerations, timeUntilReset, MAX_GENERATIONS, WINDOW_HOURS } from "@/lib/rate-limit";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type ModalState = "idle" | "generating" | "complete" | "error";
+type ModalState = "idle" | "generating" | "complete" | "error" | "rate-limited";
 
 interface PDFGenerationModalProps {
   isOpen: boolean;
@@ -192,6 +193,11 @@ export function PDFGenerationModal({
   }, [state]);
 
   const handleGenerate = useCallback(async () => {
+    if (!canGeneratePDF()) {
+      setState("rate-limited");
+      return;
+    }
+
     setState("generating");
     setCurrentStep(0);
     setErrorMsg("");
@@ -233,6 +239,7 @@ export function PDFGenerationModal({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      recordPDFGeneration();
       setState("complete");
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : "Failed to generate report");

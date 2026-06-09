@@ -59,7 +59,7 @@ export function PrivacyContent() {
       <p>
         We do not currently offer user accounts, contact forms, newsletter signups, or
         commenting functionality. If you email us directly at{" "}
-        <a href="mailto:hello@ashevillere.com">hello@ashevillere.com</a>, we will receive
+        <a href="mailto:chris@ashevillere.com">chris@ashevillere.com</a>, we will receive
         your email address and any information you choose to include in your message. We
         use this solely to respond to your inquiry and do not add you to any mailing list.
       </p>
@@ -352,7 +352,7 @@ export function PrivacyContent() {
       <ul>
         <li>
           <strong>Email:</strong>{" "}
-          <a href="mailto:hello@ashevillere.com">hello@ashevillere.com</a>
+          <a href="mailto:chris@ashevillere.com">chris@ashevillere.com</a>
         </li>
         <li>
           <strong>Location:</strong> Asheville, North Carolina

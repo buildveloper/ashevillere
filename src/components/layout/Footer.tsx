@@ -103,7 +103,7 @@ export function Footer() {
               </span>
               <span className="flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-emerald-500" strokeWidth={1.5} />
-                hello@ashevillere.com
+                <a href="mailto:chris@ashevillere.com" className="hover:text-emerald-400 transition-colors">chris@ashevillere.com</a>
               </span>
             </div>
           </motion.div>

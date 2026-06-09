@@ -36,20 +36,15 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = data as unknown as ReportPayload;
-    const { buffer, isFallback } = await generatePDF(reportType, payload);
+    const { buffer } = await generatePDF(reportType, payload);
     const filename = getReportFilename(reportType, payload);
-
-    const contentType = isFallback
-      ? "text/html; charset=utf-8"
-      : "application/pdf";
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
-        "Content-Type": contentType,
+        "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Content-Length": buffer.length.toString(),
-        "X-Report-Fallback": isFallback ? "true" : "false",
       },
     });
   } catch (error) {

@@ -188,7 +188,7 @@ export function TermsContent() {
       </ul>
       <p>
         If you identify an error on the Site, please let us know at{" "}
-        <a href="mailto:hello@ashevillere.com">hello@ashevillere.com</a>.
+        <a href="mailto:chris@ashevillere.com">chris@ashevillere.com</a>.
       </p>
 
       {/* Intellectual Property */}
@@ -380,7 +380,7 @@ export function TermsContent() {
       <ul>
         <li>
           <strong>Email:</strong>{" "}
-          <a href="mailto:hello@ashevillere.com">hello@ashevillere.com</a>
+          <a href="mailto:chris@ashevillere.com">chris@ashevillere.com</a>
         </li>
         <li>
           <strong>Location:</strong> Asheville, North Carolina
