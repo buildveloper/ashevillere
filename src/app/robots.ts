@@ -5,8 +5,25 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/admin", "/api/"],
+        allow: [
+          "/",
+          "/neighborhoods",
+          "/neighborhoods/",
+          "/homes-for-sale",
+          "/market-reports",
+          "/str-insights",
+          "/blog",
+          "/blog/",
+          "/tools",
+          "/resources",
+          "/submit-listing",
+          "/privacy",
+          "/terms",
+          "/affiliate-disclosure",
+          "/og",
+          "/sitemap.xml",
+        ],
+        disallow: ["/admin", "/admin/", "/api/"],
       },
       {
         userAgent: "GPTBot",
@@ -15,6 +32,14 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "CCBot",
         disallow: "/",
+      },
+      {
+        userAgent: "anthropic-ai",
+        disallow: "/",
+      },
+      {
+        userAgent: "Google-Extended",
+        disallow: "/api/",
       },
     ],
     sitemap: "https://ashevillere.com/sitemap.xml",

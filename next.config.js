@@ -3,10 +3,17 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
+    remotePatterns: [
+      { protocol: 'https', hostname: '**.ashevillere.com' },
+    ],
   },
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+
+  // Vercel serverless optimization
+  serverExternalPackages: [],
+
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -14,6 +21,7 @@ const nextConfig = {
       'recharts',
     ],
   },
+
   headers: async () => [
     {
       source: '/(.*)',
@@ -23,6 +31,8 @@ const nextConfig = {
         { key: 'X-XSS-Protection', value: '1; mode=block' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        { key: 'X-DNS-Prefetch-Control', value: 'on' },
+        { key: 'Link', value: '<https://ashevillere.com>; rel="canonical"' },
       ],
     },
     {
@@ -45,6 +55,10 @@ const nextConfig = {
       ],
     },
   ],
+
+  async rewrites() {
+    return [];
+  },
 };
 
 module.exports = nextConfig;

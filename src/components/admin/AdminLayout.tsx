@@ -16,9 +16,10 @@ import {
   Sparkles,
   PlusCircle,
   Download,
+  BarChart3,
 } from "lucide-react";
 
-export type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings" | "ai" | "listings" | "import";
+export type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings" | "ai" | "listings" | "import" | "analytics";
 
 const SIDEBAR_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,14 +29,24 @@ const SIDEBAR_ITEMS: { id: Section; label: string; icon: React.ElementType }[] =
   { id: "ai", label: "AI Content", icon: Sparkles },
   { id: "listings", label: "Listings", icon: PlusCircle },
   { id: "import", label: "Data Import", icon: Download },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
+
+function getCSRFToken(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : "";
+}
 
 export function useAdminAPI() {
   const call = useCallback(async (action: string, body?: unknown) => {
     const res = await fetch(`/api/admin?action=${action}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": getCSRFToken(),
+      },
       body: body ? JSON.stringify(body) : undefined,
     });
     return res.json();

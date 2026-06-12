@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings, PenLine, PlusCircle, Download } from "lucide-react";
+import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings, PenLine, PlusCircle, Download, BarChart3 } from "lucide-react";
 import {
   AdminSidebar,
   AdminToast,
@@ -16,6 +16,7 @@ import { SettingsPanel } from "@/components/admin/SettingsPanel";
 import { AIContentPanel } from "@/components/admin/AIContentPanel";
 import { ListingSubmissionPanel } from "@/components/admin/ListingSubmissionPanel";
 import { DataImportPanel } from "@/components/admin/DataImportPanel";
+import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 
 function LoginGate({ onLogin }: { onLogin: () => void }) {
   const api = useAdminAPI();
@@ -23,6 +24,14 @@ function LoginGate({ onLogin }: { onLogin: () => void }) {
   const [error, setError] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [csrfReady, setCsrfReady] = useState(false);
+
+  // Initialize CSRF token before allowing login
+  useEffect(() => {
+    fetch("/api/admin?action=check")
+      .then(() => setCsrfReady(true))
+      .catch(() => setCsrfReady(true)); // Still allow login even if CSRF fails
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +205,8 @@ export default function AdminPage() {
         return <ListingSubmissionPanel />;
       case "import":
         return <DataImportPanel />;
+      case "analytics":
+        return <AnalyticsPanel />;
       case "settings":
         return <SettingsPanel />;
       default:
@@ -249,6 +260,7 @@ const QUICK_ACTIONS: { label: string; section: Section; description: string; ico
   { label: "AI Content", section: "ai", description: "Generate SEO blog posts with Groq AI", icon: PenLine },
   { label: "Listings", section: "listings", description: "Add home listings + review public FSBO submissions", icon: PlusCircle },
   { label: "Data Import", section: "import", description: "Import public data from county records, CSV, Craigslist", icon: Download },
+  { label: "Analytics", section: "analytics", description: "Track page views, chat usage, PDF downloads, and affiliate clicks", icon: BarChart3 },
   { label: "Site Settings", section: "settings", description: "Timestamps, data export, and system info", icon: Settings },
 ];
 

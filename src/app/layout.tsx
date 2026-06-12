@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import { Suspense } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ChatbotClient } from "@/components/ai-chatbot/ChatbotClient";
 import { SearchProvider } from "@/components/search/GlobalSearch";
-import { JsonLd } from "@/components/seo/JsonLd";
+import { OrganizationSchema, WebSiteSchema } from "@/components/seo/JsonLd";
+import { Analytics } from "@/components/analytics/Analytics";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,18 +27,48 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "AshevilleRE — Premium Real Estate Intelligence",
+    default: "AshevilleRE — Premium Real Estate Intelligence | Asheville NC",
     template: "%s | AshevilleRE",
   },
   description:
-    "AshevilleRE delivers premium real estate intelligence for Asheville, NC. Explore market reports, neighborhood guides, STR insights, and powerful tools.",
+    "AshevilleRE delivers premium real estate intelligence for Asheville, NC. Explore market reports, neighborhood guides, STR insights, home value estimates, and powerful investor tools.",
   metadataBase: new URL("https://ashevillere.com"),
-  robots: { index: true, follow: true },
-  alternates: { canonical: "https://ashevillere.com" },
+  applicationName: "AshevilleRE",
+  authors: [{ name: "AshevilleRE", url: "https://ashevillere.com" }],
+  generator: "Next.js",
+  keywords: [
+    "Asheville real estate",
+    "Asheville NC homes",
+    "Asheville market report",
+    "Asheville neighborhoods",
+    "short term rental Asheville",
+    "Asheville STR",
+    "home value estimator Asheville",
+    "relocate Asheville",
+    "Asheville property investment",
+    "Asheville real estate market",
+  ],
+  robots: {
+    index: true,
+    follow: true,
+    "max-video-preview": -1,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: "https://ashevillere.com",
+  },
   openGraph: {
     title: "AshevilleRE — Premium Real Estate Intelligence",
     description:
-      "AshevilleRE delivers premium real estate intelligence for Asheville, NC. Market reports, neighborhood guides, STR insights, and tools.",
+      "AshevilleRE delivers premium real estate intelligence for Asheville, NC. Market reports, neighborhood guides, STR insights, and investor tools.",
     url: "https://ashevillere.com",
     siteName: "AshevilleRE",
     locale: "en_US",
@@ -46,7 +78,7 @@ export const metadata: Metadata = {
         url: "https://ashevillere.com/og?title=AshevilleRE&subtitle=Premium+Real+Estate+Intelligence&tag=ASHEVILLE+NC",
         width: 1200,
         height: 630,
-        alt: "AshevilleRE — Premium Real Estate Intelligence",
+        alt: "AshevilleRE — Premium Real Estate Intelligence for Asheville, NC",
       },
     ],
   },
@@ -56,10 +88,13 @@ export const metadata: Metadata = {
     description:
       "AshevilleRE delivers premium real estate intelligence for Asheville, NC.",
     images: ["https://ashevillere.com/og?title=AshevilleRE&subtitle=Premium+Real+Estate+Intelligence&tag=ASHEVILLE+NC"],
+    creator: "@ashevillere",
+    site: "@ashevillere",
   },
   verification: {
     google: "google-site-verification-placeholder",
   },
+  category: "Real Estate",
 };
 
 export default function RootLayout({
@@ -83,6 +118,11 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Preconnect to external domains */}
+        <link rel="preconnect" href="https://api.groq.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
       </head>
       <body className="min-h-screen flex flex-col antialiased font-sans">
         <ThemeProvider>
@@ -93,17 +133,11 @@ export default function RootLayout({
             <ChatbotClient />
           </SearchProvider>
         </ThemeProvider>
-        <JsonLd data={{
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "AshevilleRE",
-          url: "https://ashevillere.com",
-          potentialAction: {
-            "@type": "SearchAction",
-            target: "https://ashevillere.com/?q={search_term_string}",
-            "query-input": "required name=search_term_string",
-          },
-        }} />
+        <OrganizationSchema />
+        <WebSiteSchema />
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
       </body>
     </html>
   );
