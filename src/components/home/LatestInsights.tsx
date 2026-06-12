@@ -12,7 +12,7 @@ export function LatestInsights() {
   const featuredPosts = getFeaturedPosts(3);
 
   return (
-    <section ref={ref} className="relative py-20 sm:py-28 px-4 sm:px-6">
+    <section ref={ref} className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 

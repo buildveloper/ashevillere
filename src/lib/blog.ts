@@ -92,7 +92,7 @@ export const ALL_CATEGORIES = Object.keys(CATEGORIES) as BlogCategory[];
 
 // ─── Unsplash Cover Images ───────────────────────────────────────────────────
 
-const COVER_MARKET_REPORT = "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1200&q=80&auto=format&fit=crop";
+const COVER_MARKET_REPORT = "https://images.unsplash.com/photo-1464815479333-08f9d0e2b0a4?w=1200&q=80&auto=format&fit=crop";
 const COVER_FAMILIES = "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80&auto=format&fit=crop";
 const COVER_STR = "https://images.unsplash.com/photo-1475855581690-80f6a6b868a1?w=1200&q=80&auto=format&fit=crop";
 const COVER_RELOCATION = "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=1200&q=80&auto=format&fit=crop";

@@ -34,7 +34,7 @@ export const NEIGHBORHOOD_IMAGES: Record<string, ImageConfig> = {
     "Vibrant downtown Asheville streetscape with brick buildings"
   ),
   "river-arts": unsplash(
-    "1564013799919-ab600027ff36",
+    "1595206137885-9ed3b46d87f8",
     800, 600,
     "Industrial-chic warehouse in River Arts District"
   ),
@@ -59,7 +59,7 @@ export const NEIGHBORHOOD_IMAGES: Record<string, ImageConfig> = {
     "Lakefront home with mountain views in Kenilworth"
   ),
   "beaver-lake": unsplash(
-    "1600047509807-ba9ddec7ef9d",
+    "1600073240990-08f66b7f59b1",
     800, 600,
     "Beautiful home near Beaver Lake with natural surroundings"
   ),
@@ -142,7 +142,7 @@ const PROPERTY_IMAGE_IDS = [
   "1575517111478-7f6afc0979db", // historic porch
   "1512917774080-9991f1c4c750", // lakefront
   "1583608205776-bfd35f0d9c59", // mid-century
-  "1600047509807-ba9ddec7ef9d", // contemporary mountain
+  "1600073240990-08f66b7f59b1", // contemporary mountain
 ];
 
 export const PROPERTY_IMAGE_POOL: ImageConfig[] = PROPERTY_IMAGE_IDS.map((id, i) =>

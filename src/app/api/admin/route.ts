@@ -444,7 +444,7 @@ export async function POST(request: NextRequest) {
         propertyType: sanitizeString(sanitized.propertyType, 50),
         yearBuilt: sanitizePositiveInt(sanitized.yearBuilt, new Date().getFullYear() + 1),
         description: sanitizeString(sanitized.description, 2000),
-        imageUrl: sanitizeString(sanitized.imageUrl, 500) || sanitizeString(sanitized.imageUrls, 500),
+        image: sanitizeString(sanitized.image, 500) || sanitizeString(sanitized.imageUrl, 500) || sanitizeString(sanitized.imageUrls, 500),
         daysOnMarket: sanitizePositiveInt(sanitized.daysOnMarket, 999),
         lat: Number(sanitized.lat) || 35.5951,
         lng: Number(sanitized.lng) || -82.5515,

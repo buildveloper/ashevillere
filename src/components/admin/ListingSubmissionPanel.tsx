@@ -24,6 +24,7 @@ import {
   RefreshCcw,
   Eye,
   ExternalLink,
+  UploadCloud,
 } from "lucide-react";
 import { AdminSectionHeader, AdminFormField, AdminToast, useAdminAPI } from "./AdminLayout";
 import type { Listing } from "@/lib/listings";
@@ -67,6 +68,10 @@ export function ListingSubmissionPanel() {
   const [saving, setSaving] = useState(false);
   const [improving, setImproving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Image upload state
+  const [uploading, setUploading] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
   // Submissions state
   const [submissions, setSubmissions] = useState<ListingSubmission[]>([]);
@@ -137,6 +142,47 @@ export function ListingSubmissionPanel() {
       setToast("Failed to connect to AI service.");
     }
     setImproving(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setToast("File too large. Maximum size: 10MB.");
+      return;
+    }
+
+    // Show local preview
+    const reader = new FileReader();
+    reader.onload = (ev) => setUploadPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const csrfToken = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "";
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "X-CSRF-Token": csrfToken },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setListing((p) => ({ ...p, image: data.url }));
+        setToast("Image uploaded successfully!");
+      } else {
+        setToast("Upload failed: " + (data.error || "Unknown error"));
+        setUploadPreview(null);
+      }
+    } catch {
+      setToast("Upload failed. Please check your connection.");
+      setUploadPreview(null);
+    }
+    setUploading(false);
+    e.target.value = "";
   };
 
   const handleApproveSubmission = async (trackingNumber: string) => {
@@ -374,15 +420,66 @@ export function ListingSubmissionPanel() {
               )}
             </AdminFormField>
 
-            {/* Image URL */}
-            <AdminFormField label="Image URL">
-              <input
-                type="text"
-                value={listing.image}
-                onChange={(e) => setListing((p) => ({ ...p, image: e.target.value }))}
-                placeholder="https://... or leave empty for placeholder"
-                className="w-full bg-transparent border border-[var(--color-glass-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors text-[var(--color-text-primary)]"
-              />
+            {/* Image */}
+            <AdminFormField label="Listing Photo">
+              <div className="space-y-3">
+                {/* File upload */}
+                <div className="flex items-center gap-3">
+                  <label className="relative cursor-pointer group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-[var(--color-glass-border)] text-sm text-slate-400 group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition-colors">
+                      {uploading ? (
+                        <RefreshCcw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="w-4 h-4" />
+                      )}
+                      {uploading ? "Uploading..." : "Upload from phone or PC"}
+                    </div>
+                  </label>
+                  {(uploadPreview || listing.image) && (
+                    <button
+                      onClick={() => { setListing((p) => ({ ...p, image: "" })); setUploadPreview(null); }}
+                      className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Preview */}
+                {(uploadPreview || listing.image) && (
+                  <div className="relative w-40 h-32 rounded-lg overflow-hidden border border-[var(--color-glass-border)]">
+                    <img
+                      src={uploadPreview || listing.image}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Or paste URL */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[var(--color-glass-border)]" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-[var(--color-bg-primary)] px-3 text-[10px] uppercase tracking-wider text-slate-600">Or paste image URL</span>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={listing.image}
+                  onChange={(e) => setListing((p) => ({ ...p, image: e.target.value }))}
+                  placeholder="https://..."
+                  className="w-full bg-transparent border border-[var(--color-glass-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors text-[var(--color-text-primary)]"
+                />
+              </div>
             </AdminFormField>
           </div>
 

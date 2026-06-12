@@ -21,12 +21,12 @@ export interface Listing {
 const IMG = [
   "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1564013799919-ab600027ff36?w=800&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1595206137885-9ed3b46d87f8?w=800&q=80&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1575517111478-7f6afc0979db?w=800&q=80&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1583608205776-bfd35f0d9c59?w=800&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1600047509807-ba9ddec7ef9d?w=800&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1600073240990-08f66b7f59b1?w=800&q=80&auto=format&fit=crop",
 ];
 
 export const LISTINGS: Listing[] = [

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Edit3, Eye, ArrowLeft, Clock, FileText } from "lucide-react";
+import { Plus, Trash2, Edit3, Eye, ArrowLeft, Clock, FileText, UploadCloud, RefreshCcw } from "lucide-react";
 import { AdminSectionHeader, AdminFormField, AdminToast, useAdminAPI } from "./AdminLayout";
 import type { BlogPost, BlogCategory, BlogContentBlock } from "@/lib/blog";
 import { ALL_CATEGORIES } from "@/lib/blog";
@@ -35,6 +35,10 @@ export function BlogManagerPanel() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Cover image upload state
+  const [uploading, setUploading] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+
   useEffect(() => {
     api("get-blog-posts").then((data) => {
       if (Array.isArray(data)) setPosts(data);
@@ -63,6 +67,46 @@ export function BlogManagerPanel() {
 
   const handleFieldChange = (field: string, value: string | number | boolean | string[] | { name: string; avatar: string }) => {
     setEditPost((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setToast("File too large. Maximum size: 10MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => setUploadPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const csrfToken = document.cookie.match(/csrf_token=([^;]+)/)?.[1] || "";
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "X-CSRF-Token": csrfToken },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setEditPost((p) => ({ ...p, coverImage: data.url }));
+        setToast("Cover image uploaded!");
+      } else {
+        setToast("Upload failed: " + (data.error || "Unknown error"));
+        setUploadPreview(null);
+      }
+    } catch {
+      setToast("Upload failed. Please check your connection.");
+      setUploadPreview(null);
+    }
+    setUploading(false);
+    e.target.value = "";
   };
 
   const handleSave = async () => {
@@ -285,6 +329,65 @@ export function BlogManagerPanel() {
             placeholder="Brief summary shown on cards..."
             className="w-full bg-transparent border border-[var(--color-glass-border)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500/50 resize-none"
           />
+        </AdminFormField>
+
+        {/* Cover Image */}
+        <AdminFormField label="Cover Image">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <label className="relative cursor-pointer group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  disabled={uploading}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-[var(--color-glass-border)] text-sm text-slate-400 group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition-colors">
+                  {uploading ? (
+                    <RefreshCcw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="w-4 h-4" />
+                  )}
+                  {uploading ? "Uploading..." : "Upload cover photo"}
+                </div>
+              </label>
+              {(uploadPreview || editPost.coverImage) && (
+                <button
+                  onClick={() => { setEditPost((p) => ({ ...p, coverImage: "" })); setUploadPreview(null); }}
+                  className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {(uploadPreview || editPost.coverImage) && (
+              <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border border-[var(--color-glass-border)]">
+                <img
+                  src={uploadPreview || editPost.coverImage}
+                  alt="Cover preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[var(--color-glass-border)]" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-[var(--color-bg-primary)] px-3 text-[10px] uppercase tracking-wider text-slate-600">Or paste image URL</span>
+              </div>
+            </div>
+            <input
+              type="text"
+              value={editPost.coverImage}
+              onChange={(e) => handleFieldChange("coverImage", e.target.value)}
+              placeholder="https://..."
+              className="w-full bg-transparent border border-[var(--color-glass-border)] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500/50"
+            />
+          </div>
         </AdminFormField>
 
         {/* Tags */}

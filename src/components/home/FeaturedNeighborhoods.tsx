@@ -32,7 +32,7 @@ const NEIGHBORHOODS = [
     name: "River Arts District",
     description: "Converted warehouses and modern lofts along the French Broad River.",
     price: "$450K",
-    image: "https://images.unsplash.com/photo-1564013799919-ab600027ff36?w=800&q=80&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1595206137885-9ed3b46d87f8?w=800&q=80&auto=format&fit=crop",
   },
   {
     id: "west-asheville",

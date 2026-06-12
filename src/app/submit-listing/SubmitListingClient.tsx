@@ -25,6 +25,8 @@ import {
   Sparkles,
   ChevronDown,
   RefreshCcw,
+  UploadCloud,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { NEIGHBORHOODS } from "@/lib/neighborhoods";
@@ -80,9 +82,62 @@ export function SubmitListingClient() {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [error, setError] = useState("");
 
+  // Image upload state
+  const [uploading, setUploading] = useState(false);
+  const [uploadPreviews, setUploadPreviews] = useState<string[]>([]);
+
   const handleChange = (field: keyof FormData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setError("");
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newPreviews: string[] = [];
+
+    for (let i = 0; i < Math.min(files.length, 4); i++) {
+      const file = files[i];
+
+      if (file.size > 10 * 1024 * 1024) {
+        setError("File too large. Maximum size: 10MB per image.");
+        setUploading(false);
+        return;
+      }
+
+      // Local preview
+      const reader = new FileReader();
+      const idx = i;
+      reader.onload = (ev) => {
+        setUploadPreviews((prev) => {
+          const copy = [...prev];
+          copy[idx] = ev.target?.result as string;
+          return copy;
+        });
+      };
+      reader.readAsDataURL(file);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload?public=true", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.url) {
+          const field = `imageUrl${i + 1}` as keyof FormData;
+          setForm((prev) => ({ ...prev, [field]: data.url }));
+          newPreviews.push(data.url);
+        }
+      } catch {
+        // Continue with remaining files
+      }
+    }
+    setUploading(false);
+    e.target.value = "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -361,7 +416,55 @@ export function SubmitListingClient() {
               {/* Images */}
               <div>
                 <h2 className="font-display text-xl font-semibold text-[var(--color-text-primary)] mb-1">Images</h2>
-                <p className="text-xs text-slate-500 mb-6">Add URLs to photos of your property. For best results, use high-quality images hosted on a public URL.</p>
+                <p className="text-xs text-slate-500 mb-6">Upload photos from your phone or computer, or paste image URLs below.</p>
+
+                {/* File upload */}
+                <div className="mb-4">
+                  <label className="relative cursor-pointer group inline-block">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-[var(--color-glass-border)] text-sm text-slate-400 group-hover:border-emerald-500/50 group-hover:text-emerald-400 transition-colors">
+                      {uploading ? (
+                        <RefreshCcw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="w-4 h-4" />
+                      )}
+                      {uploading ? "Uploading..." : "Upload photos from phone or PC (up to 4)"}
+                    </div>
+                  </label>
+                </div>
+
+                {/* Upload previews */}
+                {uploadPreviews.filter(Boolean).length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    {uploadPreviews.map((preview, i) => {
+                      if (!preview) return null;
+                      const field = `imageUrl${i + 1}` as keyof FormData;
+                      return (
+                        <div key={i} className="relative aspect-video rounded-lg overflow-hidden border border-[var(--color-glass-border)]">
+                          <img src={preview} alt={`Upload ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => {
+                              setForm((p) => ({ ...p, [field]: "" }));
+                              setUploadPreviews((p) => { const copy = [...p]; copy[i] = ""; return copy; });
+                            }}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-red-500 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* URL inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[1, 2, 3, 4].map((n) => {
                     const field = `imageUrl${n}` as keyof FormData;
