@@ -13,9 +13,15 @@ export interface Listing {
   yearBuilt: number;
   description: string;
   image: string;
+  images?: string[];
   features: string[];
   daysOnMarket: number;
-  priceChange: number; // negative = reduced
+  priceChange: number;
+}
+
+export function getPrimaryImage(listing: Listing): string {
+  if (listing.images && listing.images.length > 0) return listing.images[0];
+  return listing.image || '';
 }
 
 const IMG = [
@@ -111,6 +117,7 @@ export const LISTINGS: Listing[] = [
     yearBuilt: 2003,
     description: "Elegant estate in Biltmore Forest on 2.3 private acres. Grand two-story foyer, gourmet kitchen, library, wine cellar, and a resort-style pool. Adjacent to Biltmore Estate grounds. A generational property.",
     image: IMG[4],
+    images: [IMG[4], IMG[7]],
     features: ["2.3 Acres", "Pool", "Wine Cellar", "Library", "Gated Driveway"],
     daysOnMarket: 45,
     priceChange: -50000,
@@ -145,6 +152,7 @@ export const LISTINGS: Listing[] = [
     yearBuilt: 2022,
     description: "Like-new townhome in a master-planned South Asheville community. Open floor plan, quartz counters, attached garage, and community pool. Walk to Biltmore Park Town Square. Ideal for families or professionals.",
     image: IMG[6],
+    images: [IMG[6]],
     features: ["New Construction", "Community Pool", "Open Floor Plan", "Quartz Counters", "Attached Garage"],
     daysOnMarket: 18,
     priceChange: -5000,
@@ -298,6 +306,7 @@ export const LISTINGS: Listing[] = [
     yearBuilt: 2019,
     description: "Modern craftsman with an open floor plan, chef's kitchen with gas range, and a covered front porch perfect for people-watching. Detached studio/office in back. Steps to New Belgium Brewing.",
     image: IMG[7],
+    images: [IMG[7]],
     features: ["Modern Craftsman", "Detached Studio", "Gas Range", "Covered Porch", "Near Breweries"],
     daysOnMarket: 6,
     priceChange: 0,

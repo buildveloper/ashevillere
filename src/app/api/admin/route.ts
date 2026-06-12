@@ -445,6 +445,7 @@ export async function POST(request: NextRequest) {
         yearBuilt: sanitizePositiveInt(sanitized.yearBuilt, new Date().getFullYear() + 1),
         description: sanitizeString(sanitized.description, 2000),
         image: sanitizeString(sanitized.image, 500) || sanitizeString(sanitized.imageUrl, 500) || sanitizeString(sanitized.imageUrls, 500),
+        images: Array.isArray(sanitized.images) ? (sanitized.images as string[]).map((u: unknown) => sanitizeString(u, 500)).filter(Boolean) : [],
         daysOnMarket: sanitizePositiveInt(sanitized.daysOnMarket, 999),
         lat: Number(sanitized.lat) || 35.5951,
         lng: Number(sanitized.lng) || -82.5515,

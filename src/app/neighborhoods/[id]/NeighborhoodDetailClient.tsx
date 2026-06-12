@@ -8,6 +8,7 @@ import { ChevronRight, MapPin, TrendingUp, Clock, DollarSign, Home, GraduationCa
 import { PDFGenerationModal } from "@/components/pdf/PDFGenerationModal";
 import { useInView, useCountUp } from "@/hooks/use-animations";
 import { getNeighborhood, type NeighborhoodDetail } from "@/lib/neighborhoods";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 function formatPrice(price: number, showCents = false): string {
   if (price >= 1000000) { const val = price / 1000000; return showCents ? `$${val.toFixed(2)}M` : `$${val.toFixed(1)}M`; }

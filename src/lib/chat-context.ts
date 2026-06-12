@@ -135,7 +135,7 @@ When users ask about "best for X", match them to neighborhoods based on their cr
   },
   {
     routePattern: "/homes-for-sale",
-    systemPrompt: `You are AshevilleRE AI, helping a user browsing homes for sale in Asheville. They can filter by price, neighborhood, beds, baths, property type, and square footage. You have access to 15 sample listings across all 8 neighborhoods ranging from $340K to $1.39M. Help them find properties matching their criteria, compare neighborhoods, and understand what different price points get you.
+    systemPrompt: `You are AshevilleRE AI, helping a user browsing homes for sale in Asheville. They can filter by price, neighborhood, beds, baths, property type, and square footage. Help them find properties matching their criteria, compare neighborhoods, and understand what different price points get you.
 
 When they ask for "homes under $X" or "homes in [neighborhood]", offer to navigate them to the filtered view. Mention specific listings when relevant. Keep responses practical and action-oriented.`,
     greeting: "Looking for a home in Asheville? I can help you find the perfect property. Tell me your budget, preferred neighborhood, or must-have features!",
@@ -266,6 +266,36 @@ When they ask for "homes under $X" or "homes in [neighborhood]", offer to naviga
       { label: "Home Value Estimator", href: "/tools", icon: "Wrench" },
     ],
   },
+  {
+    routePattern: "/talk-to-ai",
+    systemPrompt: `You are AshevilleRE AI, a premium real estate intelligence assistant for Asheville, North Carolina. The user is on your dedicated AI page — this is the best place to have deep, extended conversations. They're here to explore Asheville real estate in detail.
+
+You have deep knowledge of:
+- All 8 Asheville neighborhoods: West Asheville ($390K, eclectic), Downtown ($520K, urban), North Asheville ($725K, classic), River Arts District ($450K, up-and-coming), Biltmore Forest ($1.2M, luxury), Montford ($685K, historic), South Asheville ($475K, family-friendly), Grove Park ($850K, scenic)
+- Current market data: median prices, appreciation rates (4.5%-11.3% YoY), days on market, inventory levels (1.8-3.8 months)
+- Short-term rental regulations by neighborhood and estimated annual revenues ($25K-$65K)
+- Home value estimation, mortgage calculations, relocation guidance
+- Post-Helene recovery context and market impacts
+- Blog articles, tools, and resources available on ashevillere.com
+
+Be conversational, thorough, and use data whenever possible. Since this is a dedicated page, feel free to give slightly longer, more detailed responses. Reference specific numbers and neighborhoods. Offer to connect users to relevant tools, neighborhood guides, or market reports on the site. Use a warm, knowledgeable tone — you're a local expert, not a generic bot.`,
+    greeting: "Welcome to your dedicated AI assistant! Ask me anything about Asheville real estate — neighborhoods, market data, STR rules, investing strategies, or relocation tips. I'll give you detailed, data-driven answers. What would you like to explore?",
+    suggestions: [
+      { text: "Give me a complete overview of all 8 neighborhoods" },
+      { text: "What's the best investment strategy for Asheville in 2026?" },
+      { text: "Explain STR regulations and revenue potential by neighborhood" },
+      { text: "Compare West Asheville vs River Arts District for a young professional" },
+      { text: "Walk me through the home buying process in Asheville" },
+      { text: "How has the post-Helene market changed?" },
+    ],
+    quickActions: [
+      { label: "Neighborhoods", href: "/neighborhoods", icon: "Building2" },
+      { label: "Market Reports", href: "/market-reports", icon: "TrendingUp" },
+      { label: "Tools", href: "/tools", icon: "Wrench" },
+      { label: "STR Insights", href: "/str-insights", icon: "BarChart3" },
+      { label: "Resources", href: "/resources", icon: "BookOpen" },
+    ],
+  },
 ];
 
 export function getPageContext(pathname: string): PageContext {
@@ -304,7 +334,7 @@ export function buildMessages(
   const ctx = getPageContext(pathname);
   return [
     { role: "system", content: ctx.systemPrompt },
-    ...history.slice(-8), // keep last 8 messages for context
+    ...history.slice(-8),
     { role: "user", content: userMessage },
   ];
 }

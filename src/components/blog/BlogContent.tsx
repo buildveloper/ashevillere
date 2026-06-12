@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "@/hooks/use-animations";
 import type { BlogContentBlock } from "@/lib/blog";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 function CalloutBox({
   value,

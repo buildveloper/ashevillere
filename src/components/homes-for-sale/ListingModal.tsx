@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Bed, Bath, Square, MapPin, Clock, TrendingDown, ArrowRight, Calendar, Home } from "lucide-react";
 import Link from "next/link";
 import type { Listing } from "@/lib/listings";
+import { getPrimaryImage } from "@/lib/listings";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 function formatPrice(price: number): string {
   if (price >= 1_000_000) return `$${(price / 1_000_000).toFixed(2)}M`;
@@ -53,12 +55,13 @@ export function ListingModal({
             <div className="overflow-y-auto scrollbar-none">
               {/* Image */}
               <div className="relative h-64 sm:h-80 overflow-hidden">
-                <img
+                <OptimizedImage
                   src={listing.image}
                   alt={listing.address}
-                  className="w-full h-full object-cover"
+                  fill
+                  objectFit="cover"
+                  overlay
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/30 to-transparent" />
 
                 {/* Badges */}
                 <div className="absolute top-4 left-4 flex flex-wrap gap-2">

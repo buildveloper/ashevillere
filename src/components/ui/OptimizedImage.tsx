@@ -6,8 +6,9 @@ import Image from "next/image";
 export interface OptimizedImageProps {
   src: string;
   alt: string;
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
+  fill?: boolean;
   priority?: boolean;
   sizes?: string;
   className?: string;
@@ -21,6 +22,7 @@ export function OptimizedImage({
   alt,
   width,
   height,
+  fill = false,
   priority = false,
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
   className = "",
@@ -33,11 +35,10 @@ export function OptimizedImage({
 
   const isDataUri = src.startsWith("data:");
 
-  if (errored) {
+  if (errored || !src) {
     return <FallbackImage className={className} overlay={overlay} />;
   }
 
-  // For data URIs, fall back to regular img since next/image can't optimize them
   if (isDataUri) {
     return (
       <div className={`relative overflow-hidden ${className}`}>
@@ -56,14 +57,17 @@ export function OptimizedImage({
     );
   }
 
+  const wrapperClass = `relative overflow-hidden ${rounded ? "rounded-2xl" : ""} ${fill ? "w-full h-full absolute inset-0" : ""} ${className}`;
+
   return (
-    <div className={`relative overflow-hidden ${rounded ? "rounded-2xl" : ""} ${className}`}>
+    <div className={wrapperClass}>
       {!loaded && <ShimmerPlaceholder />}
       <Image
         src={src}
         alt={alt}
-        width={width}
-        height={height}
+        width={fill ? undefined : (width || 800)}
+        height={fill ? undefined : (height || 600)}
+        fill={fill}
         priority={priority}
         sizes={sizes}
         className={`object-${objectFit} transition-opacity duration-500 ${

@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef } from "react";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight, TrendingUp, Clock } from "lucide-react";
 import Link from "next/link";
 import { useIsMobile } from '@/hooks/use-media-query';
 import { useInView } from "@/hooks/use-animations";
 import type { NeighborhoodDetail } from "@/lib/neighborhoods";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 export function NeighborhoodCard({
   neighborhood,
@@ -17,7 +18,6 @@ export function NeighborhoodCard({
 }) {
   const { ref, inView } = useInView(0.1);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const isMobile = useIsMobile();
 
   const formatPrice = (price: number) => {
@@ -40,18 +40,14 @@ export function NeighborhoodCard({
         >
           {/* Image */}
           <div className="relative h-52 sm:h-56 overflow-hidden">
-            <motion.img
+            <OptimizedImage
               src={neighborhood.image}
               alt={neighborhood.name}
-              className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${
-                imgLoaded ? "opacity-100" : "opacity-0"
-              }`}
-              onLoad={() => setImgLoaded(true)}
+              fill
+              objectFit="cover"
+              className="transition-all duration-700 group-hover:scale-105"
+              overlay
             />
-            {!imgLoaded && (
-              <div className="absolute inset-0 shimmer-bg" />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-900/20 to-transparent" />
 
             {/* Price badge */}
             <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full glass text-xs font-semibold text-emerald-400">

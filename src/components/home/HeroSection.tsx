@@ -300,7 +300,7 @@ export function HeroSection() {
           transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <MagneticButton href="/ai-assistant" variant="primary">
+          <MagneticButton href="/talk-to-ai" variant="primary">
             <Sparkles className="w-4 h-4" />
             Talk to AI Assistant
           </MagneticButton>

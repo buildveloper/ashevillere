@@ -13,6 +13,7 @@ import {
   BarChart3,
   BookOpen,
   Mail,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,6 +32,7 @@ const NAV_LINKS = [
   { href: "/str-insights", label: "STR Insights", icon: BarChart3 },
   { href: "/resources", label: "Resources", icon: BookOpen },
   { href: "/blog", label: "Blog", icon: BookOpen },
+  { href: "/talk-to-ai", label: "AI Assistant", icon: Sparkles },
   { href: "/submit-listing", label: "Submit Your Home", icon: Home },
 ];
 

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { MapPin, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useInView } from "@/hooks/use-animations";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 const NEIGHBORHOODS = [
   {
@@ -74,12 +75,14 @@ function NeighborhoodCard({
         >
           {/* Image area */}
           <div className="relative h-40 xs:h-48 sm:h-56 overflow-hidden">
-            <img
+            <OptimizedImage
               src={hood.image}
               alt={hood.name}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              fill
+              objectFit="cover"
+              className="transition-transform duration-700 group-hover:scale-105"
+              overlay
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-deep-slate-950/70 via-deep-slate-950/20 to-transparent" />
 
             {/* Price badge */}
             <motion.div

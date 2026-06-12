@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Bed, Bath, Square, MapPin, Clock, TrendingDown, ArrowRight } from "lucide-react";
 import { useCountUp } from "@/hooks/use-animations";
 import type { Listing } from "@/lib/listings";
+import { getPrimaryImage } from "@/lib/listings";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 function formatPrice(price: number): string {
   if (price >= 1_000_000) return `$${(price / 1_000_000).toFixed(2)}M`;
@@ -47,16 +49,19 @@ export function ListingCard({
       >
         {/* Image area */}
         <div className="relative h-52 sm:h-56 overflow-hidden flex-shrink-0">
-          <motion.img
-            src={listing.image}
+          <OptimizedImage
+            src={getPrimaryImage(listing)}
             alt={listing.address}
-            className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${
-              imgLoaded ? "opacity-100" : "opacity-0"
-            }`}
-            onLoad={() => setImgLoaded(true)}
+            fill
+            objectFit="cover"
+            className="transition-all duration-700 group-hover:scale-105"
+            overlay
           />
-          {!imgLoaded && <div className="absolute inset-0 shimmer-bg" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-900/20 to-transparent" />
+          {listing.images && listing.images.length > 1 && (
+            <div className="absolute bottom-3 right-3 z-20 px-2 py-0.5 rounded-full bg-black/50 text-[10px] font-medium text-white">
+              +{listing.images.length - 1} photos
+            </div>
+          )}
 
           {/* Top-left: property type badge */}
           <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full glass text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">

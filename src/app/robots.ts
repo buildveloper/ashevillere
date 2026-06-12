@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           "/tools",
           "/resources",
           "/submit-listing",
+          "/talk-to-ai",
           "/privacy",
           "/terms",
           "/affiliate-disclosure",
