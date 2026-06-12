@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ChatbotClient } from "@/components/ai-chatbot/ChatbotClient";
 import { SearchProvider } from "@/components/search/GlobalSearch";
 import { OrganizationSchema, WebSiteSchema } from "@/components/seo/JsonLd";

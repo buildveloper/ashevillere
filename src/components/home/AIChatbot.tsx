@@ -1,8 +1,11 @@
 "use client";
 
+"use client";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Send } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-media-query";
 
 export function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +17,7 @@ export function AIChatbot() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSend = () => {
     if (!input.trim()) return;

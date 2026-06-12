@@ -4,6 +4,7 @@ import { useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { MapPin, ArrowRight, TrendingUp, Clock } from "lucide-react";
 import Link from "next/link";
+import { useIsMobile } from '@/hooks/use-media-query';
 import { useInView } from "@/hooks/use-animations";
 import type { NeighborhoodDetail } from "@/lib/neighborhoods";
 
@@ -35,7 +36,7 @@ export function NeighborhoodCard({
         <motion.div
           ref={cardRef}
           className="relative glass rounded-2xl overflow-hidden h-full group"
-          whileHover={{ y: -5, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
+          whileHover={isMobile ? {} : { y: -5, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
         >
           {/* Image */}
           <div className="relative h-52 sm:h-56 overflow-hidden">

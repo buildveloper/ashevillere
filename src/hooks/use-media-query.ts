@@ -20,7 +20,8 @@ export function useMediaQuery(query: string): boolean {
     [query]
   );
   const getSnap = useCallback(() => getSnapshot(query), [query]);
-  return useSyncExternalStore(subscribe, getSnap);
+  const getServerSnap = useCallback(() => false, []);
+  return useSyncExternalStore(subscribe, getSnap, getServerSnap);
 }
 
 export function useBreakpoint() {

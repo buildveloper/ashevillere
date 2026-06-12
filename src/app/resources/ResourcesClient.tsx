@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useInView } from "@/hooks/use-animations";
 import { AIChatbot } from "@/components/home/AIChatbot";
+import { AffiliateLogo } from "@/components/resources/AffiliateLogos";
 
 type CategoryId = "property-management" | "education" | "moving" | "legal-insurance" | "home-services";
 
