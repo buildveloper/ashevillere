@@ -41,6 +41,9 @@
     },
     "src/app/api/pdf/route.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/upload/route.ts": {
+      "maxDuration": 30
     }
   },
   "crons": []

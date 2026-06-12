@@ -14,27 +14,36 @@ import {
   BookOpen,
   Mail,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useSearch } from "@/components/search/GlobalSearch";
 import { useIsMobile } from "@/hooks/use-media-query";
-import { disableBodyScroll } from "@/lib/mobile-utils";
 
-// Link definitions with their metadata
+// Top-level nav links
 const NAV_LINKS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/homes-for-sale", label: "Homes for Sale", icon: Home },
   { href: "/market-reports", label: "Market Reports", icon: TrendingUp },
   { href: "/neighborhoods", label: "Neighborhoods", icon: Building2 },
-  { href: "/tools", label: "Tools", icon: Wrench },
-  { href: "/str-insights", label: "STR Insights", icon: BarChart3 },
-  { href: "/resources", label: "Resources", icon: BookOpen },
   { href: "/blog", label: "Blog", icon: BookOpen },
   { href: "/talk-to-ai", label: "AI Assistant", icon: Sparkles },
   { href: "/submit-listing", label: "Submit Your Home", icon: Home },
 ];
+
+// Dropdown links under "Tools"
+const TOOLS_DROPDOWN = [
+  { href: "/tools", label: "Calculators", icon: Wrench, desc: "Mortgage & home value" },
+  { href: "/str-insights", label: "STR Insights", icon: BarChart3, desc: "Rental regulations & revenue" },
+  { href: "/resources", label: "Resources", icon: BookOpen, desc: "Tools, services & guides" },
+];
+
+// Active check for tools dropdown
+function isToolsActive(pathname: string): boolean {
+  return pathname === "/tools" || pathname === "/str-insights" || pathname === "/resources";
+}
 
 // Stagger animation for nav links
 const containerVariants = {
@@ -80,7 +89,6 @@ function MagneticLogo() {
           <span className="text-emerald-500">Asheville</span>
           <span className="text-cyan-400">RE</span>
         </span>
-        {/* Subtle glow under logo */}
         <motion.div
           className="absolute -bottom-0.5 left-0 right-0 h-px rounded-full"
           style={{
@@ -95,7 +103,7 @@ function MagneticLogo() {
   );
 }
 
-// Animated nav link for desktop
+// Animated desktop nav link
 function NavLink({
   href,
   label,
@@ -117,7 +125,6 @@ function NavLink({
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
         {label}
-        {/* Active indicator */}
         {isActive && (
           <motion.div
             layoutId="nav-active"
@@ -125,7 +132,6 @@ function NavLink({
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
         )}
-        {/* Hover underline */}
         <motion.div
           className={`absolute -bottom-0.5 left-1.5 right-1.5 h-0.5 rounded-full bg-gradient-to-r from-emerald-500/40 to-cyan-400/40 ${
             isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
@@ -138,7 +144,119 @@ function NavLink({
   );
 }
 
-// Search trigger button — opens global search
+// Tools dropdown for desktop
+function ToolsDropdown() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const active = isToolsActive(pathname);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => setOpen(false), 150);
+  };
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Trigger */}
+      <motion.button
+        className={`relative flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
+          active
+            ? "text-emerald-400"
+            : "text-slate-400 hover:text-slate-200 dark:hover:text-slate-300"
+        }`}
+        whileHover={{ y: -1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        onClick={() => setOpen(!open)}
+      >
+        Tools
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+        </motion.span>
+        {active && (
+          <motion.div
+            layoutId="nav-active"
+            className="absolute -bottom-0.5 left-1.5 right-1.5 h-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
+        )}
+      </motion.button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scaleY: 0.95 }}
+            animate={{ opacity: 1, y: 0, scaleY: 1 }}
+            exit={{ opacity: 0, y: -8, scaleY: 0.95 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute top-full left-0 mt-2 w-64 glass-strong rounded-xl overflow-hidden border border-[var(--color-glass-border)] shadow-xl shadow-black/10 origin-top"
+          >
+            <div className="p-2 space-y-0.5">
+              {TOOLS_DROPDOWN.map((item) => {
+                const Icon = item.icon;
+                const isItemActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      isItemActive
+                        ? "bg-emerald-500/10"
+                        : "hover:bg-white/5"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                        isItemActive ? "text-emerald-400" : "text-slate-500"
+                      }`}
+                      strokeWidth={1.5}
+                    />
+                    <div>
+                      <p className={`text-sm font-medium ${
+                        isItemActive ? "text-emerald-400" : "text-gray-900 dark:text-white"
+                      }`}>
+                        {item.label}
+                      </p>
+                      <p className="text-[11px] text-slate-500 leading-tight">{item.desc}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Search trigger button
 function SearchTrigger() {
   const { openSearch } = useSearch();
 
@@ -155,10 +273,12 @@ function SearchTrigger() {
   );
 }
 
-// Mobile menu with animated slide-in + swipe-to-close
+// Mobile menu
 function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
+  const [toolsExpanded, setToolsExpanded] = useState(false);
+  const toolsActive = isToolsActive(pathname);
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x > 80 || info.velocity.x > 300) {
@@ -170,7 +290,6 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -179,7 +298,6 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             onClick={onClose}
           />
 
-          {/* Menu panel */}
           <motion.div
             className="fixed top-0 right-0 bottom-0 z-50 w-[85vw] max-w-72 glass-strong border-l border-[var(--color-glass-border)]"
             initial={{ x: "100%" }}
@@ -191,12 +309,10 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
           >
-            {/* Drag handle indicator */}
             {isMobile && (
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-16 rounded-r-full bg-emerald-500/20 pointer-events-none" />
             )}
 
-            {/* Close button */}
             <div className="flex items-center justify-between p-4 border-b border-[var(--color-glass-border)]">
               <span className="text-lg font-bold">
                 <span className="text-emerald-500">Asheville</span>
@@ -213,15 +329,13 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
               </motion.button>
             </div>
 
-            {/* Section header */}
             <div className="px-4 pt-5 pb-2">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
                 Navigate
               </span>
             </div>
 
-            {/* Mobile nav links */}
-            <nav className="px-3 space-y-0.5">
+            <nav className="px-3 space-y-0.5 overflow-y-auto flex-1">
               {NAV_LINKS.map((link, i) => {
                 const isActive = pathname === link.href;
                 const Icon = link.icon;
@@ -254,9 +368,67 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                   </motion.div>
                 );
               })}
+
+              {/* Tools accordion */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: NAV_LINKS.length * 0.04 }}
+              >
+                <button
+                  onClick={() => setToolsExpanded(!toolsExpanded)}
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
+                    toolsActive
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "text-slate-400 hover:text-slate-200 dark:hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <Wrench className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+                    Tools
+                  </span>
+                  <motion.span
+                    animate={{ rotate: toolsExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="w-4 h-4" strokeWidth={1.5} />
+                  </motion.span>
+                </button>
+
+                <AnimatePresence>
+                  {toolsExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden ml-4 mt-0.5 space-y-0.5 border-l border-[var(--color-glass-border)]"
+                    >
+                      {TOOLS_DROPDOWN.map((item) => {
+                        const Icon = item.icon;
+                        const isItemActive = pathname === item.href;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={onClose}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
+                              isItemActive
+                                ? "bg-emerald-500/10 text-emerald-400"
+                                : "text-slate-400 hover:text-slate-200 dark:hover:text-white hover:bg-white/5"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </nav>
 
-            {/* Contact link at bottom */}
             <div className="mt-auto px-4 pb-8">
               <div className="border-t border-[var(--color-glass-border)] pt-4">
                 <a
@@ -280,14 +452,12 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  // Track scroll for glass intensification
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -309,7 +479,6 @@ export function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
             <MagneticLogo />
 
             {/* Desktop Navigation */}
@@ -328,14 +497,15 @@ export function Navbar() {
                   />
                 </motion.div>
               ))}
+              {/* Tools dropdown */}
+              <motion.div variants={itemVariants}>
+                <ToolsDropdown />
+              </motion.div>
             </motion.nav>
 
-            {/* Right side: search + theme toggle + mobile menu trigger */}
             <div className="flex items-center gap-2">
               <SearchTrigger />
               <ThemeToggle />
-
-              {/* Mobile menu trigger */}
               <motion.button
                 className="lg:hidden w-11 h-11 rounded-full flex items-center justify-center glass-hover text-slate-400"
                 whileHover={{ scale: 1.08 }}
@@ -350,7 +520,6 @@ export function Navbar() {
         </div>
       </motion.header>
 
-      {/* Mobile menu */}
       <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
     </>
   );

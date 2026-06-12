@@ -18,7 +18,7 @@ export function ChatbotClient() {
   return (
     <>
       {/* Floating orb */}
-      <div className={`fixed z-[100] ${isMobile ? "bottom-20 right-5" : "bottom-6 right-6"}`}>
+      <div className={`fixed z-[100] ${isMobile ? "bottom-24 right-4" : "bottom-6 right-6"}`}>
         <AnimatePresence>
           {!isOpen && (
             <motion.button

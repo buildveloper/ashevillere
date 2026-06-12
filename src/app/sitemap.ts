@@ -6,7 +6,6 @@ const BASE_URL = "https://ashevillere.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const today = new Date();
-  const iso = today.toISOString();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: today, changeFrequency: "daily", priority: 1.0 },

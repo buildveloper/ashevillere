@@ -21,6 +21,17 @@ function getIP(request: NextRequest): string {
   );
 }
 
+function getBlobToken(): string {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token || token === "your_vercel_blob_read_write_token_here") {
+    throw new Error(
+      "BLOB_READ_WRITE_TOKEN is not configured. Set it in your Vercel environment variables or .env.local. " +
+      "Get your token at vercel.com/dashboard → Storage → Blob → Settings → Create Token."
+    );
+  }
+  return token;
+}
+
 export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const isPublic = url.searchParams.get("public") === "true";
@@ -56,6 +67,16 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Validate blob storage is configured
+  try {
+    getBlobToken();
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 503 }
+    );
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -84,6 +105,7 @@ export async function POST(request: NextRequest) {
     const blob = await put(filename, file, {
       access: "public",
       contentType: file.type,
+      token: getBlobToken(),
     });
 
     return NextResponse.json({
@@ -92,6 +114,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     safeError("Image upload failed", err);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Upload failed. Please try again." },
+      { status: 500 }
+    );
   }
 }

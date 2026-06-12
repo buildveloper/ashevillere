@@ -124,7 +124,7 @@ function BackToTop() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
           onClick={scrollToTop}
-          className="fixed bottom-20 right-6 z-40 w-11 h-11 rounded-full glass-strong flex items-center justify-center text-slate-400 hover:text-emerald-400 border border-[var(--color-glass-border)] shadow-lg lg:hidden"
+          className="fixed bottom-24 right-6 z-40 w-11 h-11 rounded-full glass-strong flex items-center justify-center text-slate-400 hover:text-emerald-400 border border-[var(--color-glass-border)] shadow-lg lg:hidden"
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           aria-label="Back to top"
