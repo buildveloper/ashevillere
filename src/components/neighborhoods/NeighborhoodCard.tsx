@@ -17,6 +17,7 @@ export function NeighborhoodCard({
   const { ref, inView } = useInView(0.1);
   const cardRef = useRef<HTMLDivElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const isMobile = useIsMobile();
 
   const formatPrice = (price: number) => {
     if (price >= 1000000) return `$${(price / 1000000).toFixed(1)}M`;

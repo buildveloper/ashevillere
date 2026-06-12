@@ -5,6 +5,7 @@ const nextConfig = {
     minimumCacheTTL: 86400,
     remotePatterns: [
       { protocol: 'https', hostname: '**.ashevillere.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
   compress: true,

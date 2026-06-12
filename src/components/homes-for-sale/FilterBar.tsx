@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { Search, X, ChevronDown, SlidersHorizontal, MapPin } from "lucide-react";
 import { NEIGHBORHOODS, type NeighborhoodDetail } from "@/lib/neighborhoods";
+import { disableBodyScroll } from "@/lib/mobile-utils";
 
 export interface ListingFilters {
   search: string;
@@ -63,6 +64,18 @@ export function FilterBar({
   const set = (key: keyof ListingFilters, value: unknown) => {
     onFilterChange({ ...filters, [key]: value });
   };
+
+  // Lock body scroll when mobile sheet is open
+  useEffect(() => {
+    disableBodyScroll(mobileOpen);
+    return () => { disableBodyScroll(false); };
+  }, [mobileOpen]);
+
+  const handleDragEnd = useCallback((_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.y > 100 || info.velocity.y > 300) {
+      setMobileOpen(false);
+    }
+  }, []);
 
   const toggleNeighborhood = (id: string) => {
     const next = filters.neighborhoods.includes(id)
@@ -385,13 +398,14 @@ export function FilterBar({
               value={filters.search}
               onChange={(e) => set("search", e.target.value)}
               placeholder="Search listings..."
-              className="w-full bg-transparent py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-slate-400 focus:outline-none glass rounded-xl"
+              inputMode="search"
+              className="w-full bg-transparent py-3 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-slate-400 focus:outline-none glass rounded-xl min-h-[44px]"
             />
           </div>
 
           <button
             onClick={() => setMobileOpen(true)}
-            className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl glass text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors"
+            className="relative flex items-center gap-2 px-4 py-3 rounded-xl glass text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors min-h-[44px]"
           >
             <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
             <span className="hidden sm:inline">Filters</span>
@@ -415,12 +429,21 @@ export function FilterBar({
                 onClick={() => setMobileOpen(false)}
               />
               <motion.div
-                className="fixed bottom-0 left-0 right-0 z-50 glass-strong rounded-t-2xl max-h-[85vh] overflow-y-auto p-5"
+                className="fixed bottom-0 left-0 right-0 z-50 glass-strong rounded-t-2xl max-h-[85vh] overflow-y-auto p-5 pb-safe"
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                drag="y"
+                dragConstraints={{ top: 0 }}
+                dragElastic={0.2}
+                onDragEnd={handleDragEnd}
               >
+                {/* Drag handle */}
+                <div className="flex justify-center mb-3">
+                  <div className="w-10 h-1 rounded-full bg-slate-600" />
+                </div>
+
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     Filters ({totalCount} listings)
@@ -435,7 +458,7 @@ export function FilterBar({
                 {filterContent}
                 <button
                   onClick={() => setMobileOpen(false)}
-                  className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold"
+                  className="mt-6 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold min-h-[44px]"
                 >
                   Show {totalCount} Listings
                 </button>

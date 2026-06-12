@@ -42,17 +42,25 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   transition: background-color 0.4s ease, color 0.4s ease;
   overflow-x: hidden;
+  padding-bottom: var(--safe-area-bottom);
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
 }
 
 /* Glassmorphism utility */

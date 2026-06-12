@@ -128,7 +128,8 @@ export default function RootLayout({
         <ThemeProvider>
           <SearchProvider>
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+            <MobileBottomNav />
             <Footer />
             <ChatbotClient />
           </SearchProvider>

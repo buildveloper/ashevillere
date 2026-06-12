@@ -20,6 +20,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { getPageContext, type ChatMessage } from "@/lib/chat-context";
+import { useIsMobile } from "@/hooks/use-media-query";
+import { disableBodyScroll } from "@/lib/mobile-utils";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
   Building2,
@@ -241,7 +243,7 @@ export function ChatbotClient() {
   return (
     <>
       {/* Floating orb */}
-      <div className="fixed bottom-6 right-6 z-[100]">
+      <div className={`fixed z-[100] ${isMobile ? "bottom-20 right-5" : "bottom-6 right-6"}`}>
         <AnimatePresence>
           {!isOpen && (
             <motion.button
@@ -314,7 +316,11 @@ export function ChatbotClient() {
 
             {/* Panel */}
             <motion.div
-              className="fixed bottom-6 right-6 z-[110] w-[400px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-6rem)] glass-strong rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-emerald-500/10"
+              className={`fixed z-[110] glass-strong shadow-2xl flex flex-col overflow-hidden border border-emerald-500/10 ${
+                isMobile
+                  ? "inset-0 rounded-none"
+                  : "bottom-6 right-6 w-[400px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-6rem)] rounded-2xl"
+              }`}
               initial={{ opacity: 0, scale: 0.95, y: 20, x: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20, x: 20 }}
@@ -412,7 +418,7 @@ export function ChatbotClient() {
               {/* Quick actions */}
               {messages.length > 1 && (
                 <div className="px-4 pb-2">
-                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
+                  <div className={`flex items-center gap-2 ${isMobile ? "flex-wrap" : "overflow-x-auto scrollbar-none"} py-1`}>
                     {ctx.quickActions.map((action, i) => {
                       const Icon = ICON_MAP[action.icon] || Sparkles;
                       return (

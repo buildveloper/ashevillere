@@ -343,11 +343,7 @@ function AffiliateCard({
       )}
 
       <div className="flex items-start gap-4 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-400/10 flex items-center justify-center flex-shrink-0">
-          <span className="font-display text-lg font-bold text-emerald-400">
-            {item.name.charAt(0)}
-          </span>
-        </div>
+        <AffiliateLogo name={item.name} size={48} />
         <div className="flex-1 min-w-0">
           <h3 className="font-display text-lg font-semibold text-gray-900 dark:text-white">
             {item.name}

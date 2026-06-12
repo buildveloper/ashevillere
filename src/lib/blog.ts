@@ -90,39 +90,20 @@ export const CATEGORIES: Record<
 
 export const ALL_CATEGORIES = Object.keys(CATEGORIES) as BlogCategory[];
 
-// ─── SVG Placeholder Covers ──────────────────────────────────────────────────
+// ─── Unsplash Cover Images ───────────────────────────────────────────────────
 
-const COVER_GRADIENT_DARK =
-  "data:image/svg+xml;base64," +
-  Buffer.from(
-    `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0F172A"/><stop offset="50%" style="stop-color:#1E293B"/><stop offset="100%" style="stop-color:#0F172A"/></linearGradient></defs><rect width="1200" height="630" fill="url(#g)"/><circle cx="200" cy="315" r="300" fill="rgba(16,185,129,0.04)"/><circle cx="1000" cy="200" r="200" fill="rgba(34,211,238,0.04)"/><circle cx="800" cy="500" r="250" fill="rgba(16,185,129,0.03)"/><line x1="100" y1="500" x2="1100" y2="500" stroke="rgba(16,185,129,0.08)" stroke-width="2"/></svg>`
-  ).toString("base64");
+const COVER_MARKET_REPORT = "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1200&q=80&auto=format&fit=crop";
+const COVER_FAMILIES = "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80&auto=format&fit=crop";
+const COVER_STR = "https://images.unsplash.com/photo-1475855581690-80f6a6b868a1?w=1200&q=80&auto=format&fit=crop";
+const COVER_RELOCATION = "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=1200&q=80&auto=format&fit=crop";
+const COVER_INVESTING = "https://images.unsplash.com/photo-1581094794329-c3562a7c2ba4?w=1200&q=80&auto=format&fit=crop";
+const COVER_RAD = "https://images.unsplash.com/photo-1545324416151-c099654d42d8?w=1200&q=80&auto=format&fit=crop";
+const COVER_INVESTMENT = "https://images.unsplash.com/photo-1560518883-cecfdd7c0b2f?w=1200&q=80&auto=format&fit=crop";
+const COVER_SPRING = "https://images.unsplash.com/photo-1558036117-15d9cf1e48ed?w=1200&q=80&auto=format&fit=crop";
 
-const COVER_GRADIENT_EMERALD =
-  "data:image/svg+xml;base64," +
-  Buffer.from(
-    `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#064e3b"/><stop offset="50%" style="stop-color:#0F172A"/><stop offset="100%" style="stop-color:#1a1a2e"/></linearGradient></defs><rect width="1200" height="630" fill="url(#g)"/><circle cx="150" cy="150" r="350" fill="rgba(16,185,129,0.06)"/><circle cx="1050" cy="480" r="280" fill="rgba(34,211,238,0.04)"/></svg>`
-  ).toString("base64");
+// ─── Author Avatar ───────────────────────────────────────────────────────────
 
-const COVER_GRADIENT_CYAN =
-  "data:image/svg+xml;base64," +
-  Buffer.from(
-    `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0F172A"/><stop offset="50%" style="stop-color:#164e63"/><stop offset="100%" style="stop-color:#0F172A"/></linearGradient></defs><rect width="1200" height="630" fill="url(#g)"/><circle cx="600" cy="315" r="400" fill="rgba(34,211,238,0.04)"/></svg>`
-  ).toString("base64");
-
-const COVER_GRADIENT_PURPLE =
-  "data:image/svg+xml;base64," +
-  Buffer.from(
-    `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1a1a2e"/><stop offset="50%" style="stop-color:#0F172A"/><stop offset="100%" style="stop-color:#2e1a3e"/></linearGradient></defs><rect width="1200" height="630" fill="url(#g)"/><circle cx="300" cy="200" r="300" fill="rgba(147,51,234,0.04)"/><circle cx="900" cy="400" r="250" fill="rgba(16,185,129,0.03)"/></svg>`
-  ).toString("base64");
-
-// ─── Tiny SVG author avatar placeholder ──────────────────────────────────────
-
-const AUTHOR_AVATAR =
-  "data:image/svg+xml;base64," +
-  Buffer.from(
-    `<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#10B981"/><stop offset="100%" style="stop-color:#22D3EE"/></linearGradient></defs><rect width="80" height="80" rx="40" fill="#1E293B"/><circle cx="40" cy="30" r="14" fill="url(#a)" opacity="0.7"/><ellipse cx="40" cy="72" rx="24" ry="14" fill="url(#a)" opacity="0.5"/></svg>`
-  ).toString("base64");
+const AUTHOR_AVATAR = "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&q=80&auto=format&fit=crop";
 
 // ─── 8 Sample Posts ──────────────────────────────────────────────────────────
 
@@ -133,7 +114,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Asheville Real Estate Market Report: Q2 2026",
     excerpt:
       "Comprehensive analysis of Asheville's real estate market in Q2 2026. Median prices, inventory trends, appreciation rates, and what the data means for buyers, sellers, and investors.",
-    coverImage: COVER_GRADIENT_EMERALD,
+    coverImage: COVER_MARKET_REPORT,
     category: "market-trends",
     date: "2026-05-15",
     readTime: 8,
@@ -273,7 +254,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Best Neighborhoods for Families in 2026",
     excerpt:
       "A comprehensive guide to Asheville's most family-friendly neighborhoods. We compare schools, safety, parks, and community vibe to help you find the perfect place to raise your family.",
-    coverImage: COVER_GRADIENT_CYAN,
+    coverImage: COVER_FAMILIES,
     category: "neighborhoods",
     date: "2026-05-20",
     readTime: 10,
@@ -403,7 +384,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "New Short-Term Rental Rules in Asheville: Complete 2026 Guide",
     excerpt:
       "Everything you need to know about Asheville's latest STR regulations. Homestay vs whole-home permits, compliance requirements, penalties, and what the changes mean for hosts and investors.",
-    coverImage: COVER_GRADIENT_PURPLE,
+    coverImage: COVER_RAD,
     category: "str-airbnb",
     date: "2026-04-10",
     readTime: 7,
@@ -526,7 +507,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Relocating to Asheville: The Complete 2026 Checklist",
     excerpt:
       "Your step-by-step guide to moving to Asheville, NC. From neighborhood research and home buying to utilities, schools, and settling in — everything you need for a smooth relocation.",
-    coverImage: COVER_GRADIENT_CYAN,
+    coverImage: COVER_RELOCATION,
     category: "relocation",
     date: "2026-05-01",
     readTime: 12,
@@ -650,7 +631,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Asheville Real Estate Investing: Strategies, Neighborhoods & ROI",
     excerpt:
       "A data-driven guide to real estate investing in Asheville. Compare appreciation rates, rental yields, STR potential, and neighborhood-level ROI to build your investment strategy.",
-    coverImage: COVER_GRADIENT_DARK,
+    coverImage: COVER_INVESTMENT,
     category: "investing",
     date: "2026-04-22",
     readTime: 9,
@@ -766,7 +747,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Hidden Gems of the River Arts District: Studios, Lofts & Creative Living",
     excerpt:
       "Discover the River Arts District's best-kept secrets — from artist studio lofts to riverfront dining. Why the RAD is Asheville's most exciting neighborhood for creatives and investors alike.",
-    coverImage: COVER_GRADIENT_PURPLE,
+    coverImage: COVER_RAD,
     category: "lifestyle",
     date: "2026-04-05",
     readTime: 6,
@@ -862,7 +843,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Post-Helene Recovery: How Asheville's Market Adapted and What's Next",
     excerpt:
       "An in-depth look at how Hurricane Helene reshaped Asheville's real estate market — from renovation premiums to infrastructure upgrades and shifting neighborhood dynamics.",
-    coverImage: COVER_GRADIENT_DARK,
+    coverImage: COVER_INVESTMENT,
     category: "market-trends",
     date: "2026-03-18",
     readTime: 7,
@@ -970,7 +951,7 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Spring 2026 Home Buying Guide: 10 Tips for Asheville Buyers",
     excerpt:
       "Navigate Asheville's competitive spring market with confidence. Expert tips on pre-approval, offer strategy, neighborhood selection, and avoiding common buyer mistakes.",
-    coverImage: COVER_GRADIENT_EMERALD,
+    coverImage: COVER_MARKET_REPORT,
     category: "market-trends",
     date: "2026-03-05",
     readTime: 6,

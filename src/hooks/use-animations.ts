@@ -43,6 +43,11 @@ export function useInView(threshold = 0.15) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    const margin = isMobile ? "0px 0px -10% 0px" : "0px";
+    const effectiveThreshold = isMobile ? Math.min(threshold, 0.05) : threshold;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -50,7 +55,7 @@ export function useInView(threshold = 0.15) {
           observer.disconnect();
         }
       },
-      { threshold }
+      { threshold: effectiveThreshold, rootMargin: margin }
     );
     observer.observe(el);
     return () => observer.disconnect();

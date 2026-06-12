@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
   Search,
   Menu,
@@ -12,11 +12,14 @@ import {
   Wrench,
   BarChart3,
   BookOpen,
+  Mail,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useSearch } from "@/components/search/GlobalSearch";
+import { useIsMobile } from "@/hooks/use-media-query";
+import { disableBodyScroll } from "@/lib/mobile-utils";
 
 // Link definitions with their metadata
 const NAV_LINKS = [
@@ -150,9 +153,16 @@ function SearchTrigger() {
   );
 }
 
-// Mobile menu with animated slide-in
+// Mobile menu with animated slide-in + swipe-to-close
 function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
+
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.x > 80 || info.velocity.x > 300) {
+      onClose();
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -174,7 +184,16 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            drag={isMobile ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
           >
+            {/* Drag handle indicator */}
+            {isMobile && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-16 rounded-r-full bg-emerald-500/20 pointer-events-none" />
+            )}
+
             {/* Close button */}
             <div className="flex items-center justify-between p-4 border-b border-[var(--color-glass-border)]">
               <span className="text-lg font-bold">
@@ -183,16 +202,24 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
               </span>
               <motion.button
                 onClick={onClose}
-                className="w-9 h-9 rounded-full flex items-center justify-center glass-hover text-slate-400"
+                className="w-11 h-11 rounded-full flex items-center justify-center glass-hover text-slate-400"
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
+                aria-label="Close menu"
               >
                 <X className="w-5 h-5" strokeWidth={1.5} />
               </motion.button>
             </div>
 
+            {/* Section header */}
+            <div className="px-4 pt-5 pb-2">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                Navigate
+              </span>
+            </div>
+
             {/* Mobile nav links */}
-            <nav className="p-4 space-y-1">
+            <nav className="px-3 space-y-0.5">
               {NAV_LINKS.map((link, i) => {
                 const isActive = pathname === link.href;
                 const Icon = link.icon;
@@ -201,24 +228,44 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                     key={link.href}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    transition={{ delay: i * 0.04 }}
                   >
                     <Link
                       href={link.href}
                       onClick={onClose}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all relative min-h-[44px] ${
                         isActive
                           ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                           : "text-slate-400 hover:text-slate-200 dark:hover:text-white hover:bg-white/5"
                       }`}
                     >
-                      <Icon className="w-4 h-4" strokeWidth={1.5} />
+                      {isActive && (
+                        <motion.div
+                          layoutId="mobile-nav-active"
+                          className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-gradient-to-b from-emerald-500 to-cyan-400"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
                       {link.label}
                     </Link>
                   </motion.div>
                 );
               })}
             </nav>
+
+            {/* Contact link at bottom */}
+            <div className="mt-auto px-4 pb-8">
+              <div className="border-t border-[var(--color-glass-border)] pt-4">
+                <a
+                  href="mailto:chris@ashevillere.com"
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-slate-400 hover:text-emerald-400 hover:bg-white/5 transition-all min-h-[44px]"
+                >
+                  <Mail className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+                  Contact
+                </a>
+              </div>
+            </div>
           </motion.div>
         </>
       )}
@@ -288,7 +335,7 @@ export function Navbar() {
 
               {/* Mobile menu trigger */}
               <motion.button
-                className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center glass-hover text-slate-400"
+                className="lg:hidden w-11 h-11 rounded-full flex items-center justify-center glass-hover text-slate-400"
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
                 onClick={() => setMobileOpen(true)}

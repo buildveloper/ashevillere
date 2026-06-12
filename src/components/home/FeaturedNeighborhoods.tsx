@@ -11,42 +11,42 @@ const NEIGHBORHOODS = [
     name: "Biltmore Forest",
     description: "Prestigious estates nestled among century-old trees near the iconic Biltmore Estate.",
     price: "$1.2M",
-    image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMxZTI5M2IiLz48Y2lyY2xlIGN4PSIxNTAiIGN5PSIxNTAiIHI9IjYwIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMTYsMTg1LDEyOSwwLjE1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PGNpcmNsZSBjeD0iMjgwIiBjeT0iMTAwIiByPSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDE2LDE4NSwxMjksMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+",
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80&auto=format&fit=crop",
   },
   {
     id: "montford",
     name: "Montford",
     description: "Historic district with beautifully preserved Victorian and Arts &amp; Crafts homes.",
     price: "$685K",
-    image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMwZjE3MmEiLz48cmVjdCB4PSIxMDAiIHk9IjEwMCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjEwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDIyLDIxMSwyMzgsMC4xMikiIHN0cm9rZS13aWR0aD0iMSIvPjxyZWN0IHg9IjI0MCIgeT0iMTMwIiB3aWR0aD0iNjAiIGhlaWdodD0iNzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyMiwyMTEsMjM4LDAuMTIpIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=",
+    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80&auto=format&fit=crop",
   },
   {
     id: "downtown",
     name: "Downtown",
     description: "Vibrant urban living with craft breweries, art galleries, and farm-to-table dining.",
     price: "$520K",
-    image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMxZTI5M2IiLz48bGluZSB4MT0iMTAwIiB5MT0iMTAwIiB4Mj0iMzAwIiB5Mj0iMTAwIiBzdHJva2U9InJnYmEoMTYsMTg1LDEyOSwwLjA4KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjEwMCIgeTE9IjEzMCIgeDI9IjI4MCIgeTI9IjEzMCIgc3Ryb2tlPSJyZ2JhKDE2LDE4NSwxMjksMC4xMikiIHN0cm9rZS13aWR0aD0iMS41Ii8+PGxpbmUgeDE9IjEwMCIgeTE9IjE2MCIgeDI9IjI2MCIgeTI9IjE2MCIgc3Ryb2tlPSJyZ2JhKDE2LDE4NSwxMjksMC4wOCkiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==",
+    image: "https://images.unsplash.com/photo-1600047509807-ba9ddec7ef9d?w=800&q=80&auto=format&fit=crop",
   },
   {
     id: "river-arts",
     name: "River Arts District",
     description: "Converted warehouses and modern lofts along the French Broad River.",
     price: "$450K",
-    image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMwZjE3MmEiLz48cGF0aCBkPSJNMCAyNTBoNDAwTTEwMCAyNTB2LTUwTTMwMCAyNTB2LTYwTTIwMCAyNTB2LTQwIiBzdHJva2U9InJnYmEoMjIsMjExLDIzOCwwLjEpIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiLz48L3N2Zz4=",
+    image: "https://images.unsplash.com/photo-1564013799919-ab600027ff36?w=800&q=80&auto=format&fit=crop",
   },
   {
     id: "west-asheville",
     name: "West Asheville",
     description: "Eclectic bungalows and a thriving local scene along Haywood Road.",
     price: "$390K",
-    image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMxZTI5M2IiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxNTAiIHI9IjUwIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMTYsMTg1LDEyOSwwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjxjaXJjbGUgY3g9IjMwMCIgY3k9IjE1MCIgcj0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgxNiwxODUsMTI5LDAuMDgpIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=",
+    image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80&auto=format&fit=crop",
   },
   {
     id: "grove-park",
     name: "Grove Park",
     description: "Iconic views, historic charm, and the legendary Omni Grove Park Inn.",
     price: "$850K",
-    image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMwZjE3MmEiLz48cGF0aCBkPSJNMCAzMDBsMTAwLTE1MGwxMDAgNzVsMTAwLTEwMGwxMDAgMTc1TDAgMzAweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDIyLDIxMSwyMzgsMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+",
+    image: "https://images.unsplash.com/photo-1506905925346-21b36d8f4a19?w=800&q=80&auto=format&fit=crop",
   },
 ];
 
@@ -62,7 +62,7 @@ function NeighborhoodCard({
   return (
     <motion.div
       ref={ref}
-      className="group relative flex-shrink-0 w-[280px] sm:w-[320px]"
+      className="group relative flex-shrink-0 w-[260px] xs:w-[280px] sm:w-[320px]"
       initial={{ opacity: 0, y: 30 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
@@ -73,7 +73,7 @@ function NeighborhoodCard({
           whileHover={{ y: -6, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
         >
           {/* Image area */}
-          <div className="relative h-48 sm:h-56 overflow-hidden">
+          <div className="relative h-40 xs:h-48 sm:h-56 overflow-hidden">
             <img
               src={hood.image}
               alt={hood.name}

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { useEffect } from "react";
 import { Search, Sparkles, MapPin, ArrowRight, ChevronDown, Gem, Home } from "lucide-react";
 import Link from "next/link";
 import { useSearch } from "@/components/search/GlobalSearch";
+import { useIsMobile } from "@/hooks/use-media-query";
 
 // Floating mountain silhouette
 function FloatingElement({
@@ -312,7 +313,7 @@ export function HeroSection() {
 
       {/* Scroll indicator */}
       <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2"
+        className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2, duration: 0.6 }}
