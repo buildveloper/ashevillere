@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Mail, ArrowUpRight, ChevronDown, ArrowUp } from "lucide-react";
+import { NickLaunchesBadge } from "@/components/ui/NickLaunchesBadge";
 import { useIsMobile } from "@/hooks/use-media-query";
 
 const FOOTER_COLUMNS = [
@@ -224,8 +225,19 @@ export function Footer() {
             </motion.div>
           )}
 
+          {/* Nick Launches badge */}
           <motion.div
-            className="mt-12 pt-6 border-t border-[var(--color-glass-border)] flex flex-col sm:flex-row items-center justify-between gap-3"
+            className="flex justify-center mt-10"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <NickLaunchesBadge />
+          </motion.div>
+
+          <motion.div
+            className="mt-8 pt-6 border-t border-[var(--color-glass-border)] flex flex-col sm:flex-row items-center justify-between gap-3"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
