@@ -1,8 +1,8 @@
-// Server-side rate limiting — 2 requests per 3 hours per user/IP
+// Server-side rate limiting with configurable limits per route
 // Uses Upstash Redis in production, in-memory Map for development
 
-const MAX_REQUESTS = 2;
-const WINDOW_MS = 3 * 60 * 60 * 1000; // 3 hours
+const DEFAULT_MAX_REQUESTS = 2;
+const DEFAULT_WINDOW_MS = 3 * 60 * 60 * 1000; // 3 hours
 
 interface RateLimitEntry {
   count: number;
@@ -17,7 +17,7 @@ if (typeof setInterval !== "undefined") {
     () => {
       const now = Date.now();
       for (const [key, entry] of memoryStore) {
-        if (now - entry.windowStart > WINDOW_MS) {
+        if (now - entry.windowStart > DEFAULT_WINDOW_MS) {
           memoryStore.delete(key);
         }
       }
@@ -45,7 +45,8 @@ async function getRedisEntry(key: string): Promise<RateLimitEntry | null> {
 
 async function setRedisEntry(
   key: string,
-  entry: RateLimitEntry
+  entry: RateLimitEntry,
+  ttlSec: number,
 ): Promise<void> {
   const url = process.env.UPSTASH_REDIS_REST_URL_KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_URL_KV_REST_API_TOKEN;
@@ -57,8 +58,7 @@ async function setRedisEntry(
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(entry),
     });
-    // Set expiry to window + buffer
-    await fetch(`${url}/expire/${encodeURIComponent(key)}/${Math.ceil(WINDOW_MS / 1000) + 60}`, {
+    await fetch(`${url}/expire/${encodeURIComponent(key)}/${ttlSec}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch {
@@ -73,66 +73,71 @@ export interface RateLimitResult {
 }
 
 export async function checkRateLimit(
-  identifier: string
+  identifier: string,
+  maxRequests = DEFAULT_MAX_REQUESTS,
+  windowMs = DEFAULT_WINDOW_MS,
 ): Promise<RateLimitResult> {
   const now = Date.now();
 
   // Try Redis first
   const redisEntry = await getRedisEntry(identifier);
   if (redisEntry) {
-    if (now - redisEntry.windowStart > WINDOW_MS) {
+    if (now - redisEntry.windowStart > windowMs) {
       const newEntry: RateLimitEntry = { count: 1, windowStart: now };
-      await setRedisEntry(identifier, newEntry);
+      await setRedisEntry(identifier, newEntry, Math.ceil(windowMs / 1000) + 60);
       return {
         allowed: true,
-        remaining: MAX_REQUESTS - 1,
-        resetAt: now + WINDOW_MS,
+        remaining: maxRequests - 1,
+        resetAt: now + windowMs,
       };
     }
 
-    if (redisEntry.count >= MAX_REQUESTS) {
+    if (redisEntry.count >= maxRequests) {
       return {
         allowed: false,
         remaining: 0,
-        resetAt: redisEntry.windowStart + WINDOW_MS,
+        resetAt: redisEntry.windowStart + windowMs,
       };
     }
 
     redisEntry.count++;
-    await setRedisEntry(identifier, redisEntry);
+    await setRedisEntry(identifier, redisEntry, Math.ceil(windowMs / 1000) + 60);
     return {
       allowed: true,
-      remaining: MAX_REQUESTS - redisEntry.count,
-      resetAt: redisEntry.windowStart + WINDOW_MS,
+      remaining: maxRequests - redisEntry.count,
+      resetAt: redisEntry.windowStart + windowMs,
     };
   }
 
   // Fallback to in-memory store
   const entry = memoryStore.get(identifier);
-  if (!entry || now - entry.windowStart > WINDOW_MS) {
+  if (!entry || now - entry.windowStart > windowMs) {
     memoryStore.set(identifier, { count: 1, windowStart: now });
-    return { allowed: true, remaining: MAX_REQUESTS - 1, resetAt: now + WINDOW_MS };
+    return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
   }
 
-  if (entry.count >= MAX_REQUESTS) {
+  if (entry.count >= maxRequests) {
     return {
       allowed: false,
       remaining: 0,
-      resetAt: entry.windowStart + WINDOW_MS,
+      resetAt: entry.windowStart + windowMs,
     };
   }
 
   entry.count++;
   return {
     allowed: true,
-    remaining: MAX_REQUESTS - entry.count,
-    resetAt: entry.windowStart + WINDOW_MS,
+    remaining: maxRequests - entry.count,
+    resetAt: entry.windowStart + windowMs,
   };
 }
 
-export function getRateLimitHeaders(result: RateLimitResult): Record<string, string> {
+export function getRateLimitHeaders(
+  result: RateLimitResult,
+  maxRequests = DEFAULT_MAX_REQUESTS,
+): Record<string, string> {
   return {
-    "X-RateLimit-Limit": String(MAX_REQUESTS),
+    "X-RateLimit-Limit": String(maxRequests),
     "X-RateLimit-Remaining": String(result.remaining),
     "X-RateLimit-Reset": new Date(result.resetAt).toISOString(),
   };

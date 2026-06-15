@@ -18,6 +18,10 @@ import {
   getListingSubmissions,
   saveListingSubmission,
   updateListingSubmission,
+  getContactMessages,
+  deleteContactMessage,
+  getFeedback,
+  deleteFeedback,
 } from "@/lib/admin-store";
 import {
   isAuthenticated,
@@ -532,6 +536,42 @@ export async function POST(request: NextRequest) {
       }
 
       return json({ error: "Unknown import source" }, 400);
+    }
+
+    // ─── Contact Messages ───────────────────────────────────────────────
+    if (action === "get-contact-messages") {
+      return json(getContactMessages());
+    }
+    if (action === "delete-contact-message") {
+      let body: Record<string, unknown>;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "Invalid request body" }, 400);
+      }
+      const id = sanitizeString(body.id, 100);
+      if (!id) return json({ error: "Missing message ID" }, 400);
+      const ok = deleteContactMessage(id);
+      if (!ok) return json({ error: "Not found" }, 404);
+      return json({ ok: true });
+    }
+
+    // ─── Feedback ────────────────────────────────────────────────────────
+    if (action === "get-feedback") {
+      return json(getFeedback());
+    }
+    if (action === "delete-feedback") {
+      let body: Record<string, unknown>;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "Invalid request body" }, 400);
+      }
+      const id = sanitizeString(body.id, 100);
+      if (!id) return json({ error: "Missing feedback ID" }, 400);
+      const ok = deleteFeedback(id);
+      if (!ok) return json({ error: "Not found" }, 404);
+      return json({ ok: true });
     }
 
     // ─── Export ──────────────────────────────────────────────────────────

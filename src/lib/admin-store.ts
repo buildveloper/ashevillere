@@ -209,6 +209,68 @@ export function deleteAdminListing(id: string): boolean {
   return true;
 }
 
+// ─── Contact Messages ────────────────────────────────────────────────────────
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  listingId: string;
+  listingAddress: string;
+  listingPrice: string;
+  submittedAt: string;
+}
+
+export function getContactMessages(): ContactMessage[] {
+  return getKey<ContactMessage[]>("contact-messages", []);
+}
+
+export function saveContactMessage(msg: ContactMessage): ContactMessage {
+  const msgs = getContactMessages();
+  msgs.push(msg);
+  setKey("contact-messages", msgs);
+  return msg;
+}
+
+export function deleteContactMessage(id: string): boolean {
+  const msgs = getContactMessages();
+  const filtered = msgs.filter((m) => m.id !== id);
+  if (filtered.length === msgs.length) return false;
+  setKey("contact-messages", filtered);
+  return true;
+}
+
+// ─── Feedback ────────────────────────────────────────────────────────────────
+
+export interface FeedbackEntry {
+  id: string;
+  rating: number;
+  message: string;
+  email: string;
+  submittedAt: string;
+}
+
+export function getFeedback(): FeedbackEntry[] {
+  return getKey<FeedbackEntry[]>("feedback", []);
+}
+
+export function saveFeedback(entry: FeedbackEntry): FeedbackEntry {
+  const entries = getFeedback();
+  entries.push(entry);
+  setKey("feedback", entries);
+  return entry;
+}
+
+export function deleteFeedback(id: string): boolean {
+  const entries = getFeedback();
+  const filtered = entries.filter((e) => e.id !== id);
+  if (filtered.length === entries.length) return false;
+  setKey("feedback", filtered);
+  return true;
+}
+
 // ─── Bulk Export ─────────────────────────────────────────────────────────────
 
 export function exportAllData() {
@@ -217,6 +279,8 @@ export function exportAllData() {
     neighborhoods: getAdminNeighborhoods(),
     blogPosts: getAdminBlogPosts(),
     siteSettings: getSiteSettings(),
+    contactMessages: getContactMessages(),
+    feedback: getFeedback(),
     exportedAt: new Date().toISOString(),
   };
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings, PenLine, PlusCircle, Download, BarChart3 } from "lucide-react";
+import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings, PenLine, PlusCircle, Download, BarChart3, MessageSquare, Star } from "lucide-react";
 import {
   AdminSidebar,
   AdminToast,
@@ -17,6 +17,8 @@ import { AIContentPanel } from "@/components/admin/AIContentPanel";
 import { ListingSubmissionPanel } from "@/components/admin/ListingSubmissionPanel";
 import { DataImportPanel } from "@/components/admin/DataImportPanel";
 import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
+import { InquiriesPanel } from "@/components/admin/InquiriesPanel";
+import { FeedbackPanel } from "@/components/admin/FeedbackPanel";
 
 function LoginGate({ onLogin }: { onLogin: () => void }) {
   const api = useAdminAPI();
@@ -207,6 +209,10 @@ export default function AdminPage() {
         return <DataImportPanel />;
       case "analytics":
         return <AnalyticsPanel />;
+      case "inquiries":
+        return <InquiriesPanel />;
+      case "feedback":
+        return <FeedbackPanel />;
       case "settings":
         return <SettingsPanel />;
       default:
@@ -261,6 +267,8 @@ const QUICK_ACTIONS: { label: string; section: Section; description: string; ico
   { label: "Listings", section: "listings", description: "Add home listings + review public FSBO submissions", icon: PlusCircle },
   { label: "Data Import", section: "import", description: "Import public data from county records, CSV, Craigslist", icon: Download },
   { label: "Analytics", section: "analytics", description: "Track page views, chat usage, PDF downloads, and affiliate clicks", icon: BarChart3 },
+  { label: "Inquiries", section: "inquiries", description: "View contact seller messages and buyer inquiries", icon: MessageSquare },
+  { label: "Feedback", section: "feedback", description: "Review user feedback and star ratings", icon: Star },
   { label: "Site Settings", section: "settings", description: "Timestamps, data export, and system info", icon: Settings },
 ];
 

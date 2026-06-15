@@ -17,9 +17,11 @@ import {
   PlusCircle,
   Download,
   BarChart3,
+  MessageSquare,
+  Star,
 } from "lucide-react";
 
-export type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings" | "ai" | "listings" | "import" | "analytics";
+export type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings" | "ai" | "listings" | "import" | "analytics" | "inquiries" | "feedback";
 
 const SIDEBAR_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,6 +32,8 @@ const SIDEBAR_ITEMS: { id: Section; label: string; icon: React.ElementType }[] =
   { id: "listings", label: "Listings", icon: PlusCircle },
   { id: "import", label: "Data Import", icon: Download },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "inquiries", label: "Inquiries", icon: MessageSquare },
+  { id: "feedback", label: "Feedback", icon: Star },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 

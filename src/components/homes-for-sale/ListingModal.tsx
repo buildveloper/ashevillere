@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Bed, Bath, Square, MapPin, Clock, TrendingDown, ArrowRight, Calendar, Home } from "lucide-react";
+import { X, Bed, Bath, Square, MapPin, Clock, TrendingDown, ArrowRight, Calendar, Home, Mail } from "lucide-react";
 import Link from "next/link";
 import type { Listing } from "@/lib/listings";
 import { getPrimaryImage } from "@/lib/listings";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
+import { ContactSellerModal } from "@/components/homes-for-sale/ContactSellerModal";
 
 function formatPrice(price: number): string {
   if (price >= 1_000_000) return `$${(price / 1_000_000).toFixed(2)}M`;
@@ -19,6 +21,8 @@ export function ListingModal({
   listing: Listing | null;
   onClose: () => void;
 }) {
+  const [showContact, setShowContact] = useState(false);
+
   return (
     <AnimatePresence>
       {listing && (
@@ -160,12 +164,13 @@ export function ListingModal({
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <motion.button
+                    onClick={() => setShowContact(true)}
                     className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold flex items-center justify-center gap-2"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Home className="w-4 h-4" strokeWidth={1.5} />
-                    Schedule Viewing
+                    <Mail className="w-4 h-4" strokeWidth={1.5} />
+                    Contact Seller
                   </motion.button>
                   <Link
                     href={`/neighborhoods/${listing.neighborhoodId}`}
@@ -180,6 +185,7 @@ export function ListingModal({
           </motion.div>
         </>
       )}
+      <ContactSellerModal isOpen={showContact} listing={listing} onClose={() => setShowContact(false)} />
     </AnimatePresence>
   );
 }

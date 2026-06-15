@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ChatbotClient } from "@/components/ai-chatbot/ChatbotClient";
+import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { SearchProvider } from "@/components/search/GlobalSearch";
 import { OrganizationSchema, WebSiteSchema } from "@/components/seo/JsonLd";
 import { Analytics } from "@/components/analytics/Analytics";
@@ -133,6 +134,7 @@ export default function RootLayout({
             <MobileBottomNav />
             <Footer />
             <ChatbotClient />
+            <FeedbackButton />
           </SearchProvider>
         </ThemeProvider>
         <OrganizationSchema />
