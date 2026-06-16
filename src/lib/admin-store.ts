@@ -158,6 +158,12 @@ export interface ListingSubmission {
   contactEmail: string;
   contactPhone: string;
   status: "pending" | "approved" | "rejected";
+  /** Optional rejection note shown to the submitter. */
+  rejectionReason?: string;
+  /** Timestamp the submission was approved/rejected. */
+  reviewedAt?: string;
+  /** Admin email/user who reviewed the submission. */
+  reviewedBy?: string;
   trackingNumber: string;
   submittedAt: string;
 }
@@ -213,13 +219,25 @@ export function deleteAdminListing(id: string): boolean {
 
 export interface ContactMessage {
   id: string;
+  /** Buyer's name (the person who filled out the form). */
   name: string;
+  /** Buyer's email (the contact for replies). */
   email: string;
+  /** Buyer's phone (optional). */
   phone: string;
   message: string;
   listingId: string;
   listingAddress: string;
   listingPrice: string;
+  /** URL of the listing (for inclusion in forwarded emails). */
+  listingUrl?: string;
+  /** The seller's email if known (from Craigslist / FSBO / manual entry). */
+  sellerEmail?: string;
+  /** The seller's name if known. */
+  sellerName?: string;
+  /** Whether admin has forwarded this inquiry to the seller. */
+  forwarded?: boolean;
+  forwardedAt?: string;
   submittedAt: string;
 }
 
@@ -240,6 +258,45 @@ export function deleteContactMessage(id: string): boolean {
   if (filtered.length === msgs.length) return false;
   setKey("contact-messages", filtered);
   return true;
+}
+
+export function getContactMessageById(id: string): ContactMessage | null {
+  return getContactMessages().find((m) => m.id === id) ?? null;
+}
+
+export function markContactMessageForwarded(id: string): ContactMessage | null {
+  const msgs = getContactMessages();
+  const idx = msgs.findIndex((m) => m.id === id);
+  if (idx === -1) return null;
+  msgs[idx] = { ...msgs[idx], forwarded: true, forwardedAt: new Date().toISOString() };
+  setKey("contact-messages", msgs);
+  return msgs[idx];
+}
+
+/**
+ * Look up the seller's contact email for a given listing.
+ * Priority:
+ *   1. Admin-added listings (manual/imported) → contactEmail
+ *   2. FSBO submissions (status: approved) → contactEmail
+ *   3. Hardcoded sample listings → no contactEmail
+ */
+export function findSellerEmailForListing(listingId: string): { email: string; name?: string } | null {
+  if (!listingId) return null;
+
+  const adminListings = getAdminListings();
+  const adminHit = adminListings.find((l) => l.id === listingId);
+  if (adminHit?.contactEmail) {
+    return { email: adminHit.contactEmail, name: adminHit.contactName };
+  }
+
+  const subs = getListingSubmissions();
+  // Match by id (submissions become listings with prefix "usr-")
+  const sub = subs.find((s) => `usr-${s.id.replace(/^sub-/, "")}` === listingId || s.id === listingId);
+  if (sub?.contactEmail) {
+    return { email: sub.contactEmail, name: sub.contactName };
+  }
+
+  return null;
 }
 
 // ─── Feedback ────────────────────────────────────────────────────────────────
@@ -281,6 +338,8 @@ export function exportAllData() {
     siteSettings: getSiteSettings(),
     contactMessages: getContactMessages(),
     feedback: getFeedback(),
+    listingSubmissions: getListingSubmissions(),
+    adminListings: getAdminListings(),
     exportedAt: new Date().toISOString(),
   };
 }

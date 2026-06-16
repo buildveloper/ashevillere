@@ -17,6 +17,14 @@ export interface Listing {
   features: string[];
   daysOnMarket: number;
   priceChange: number;
+  /** Seller contact email (e.g. from Craigslist import). Optional. */
+  contactEmail?: string;
+  /** Seller contact name (e.g. from Craigslist import). Optional. */
+  contactName?: string;
+  /** Seller contact phone (e.g. from Craigslist import). Optional. */
+  contactPhone?: string;
+  /** Original source of the listing (manual, fsbo, craigslist, csv). */
+  source?: "manual" | "fsbo" | "craigslist" | "csv";
 }
 
 export function getPrimaryImage(listing: Listing): string {

@@ -22,6 +22,7 @@ import {
   deleteContactMessage,
   getFeedback,
   deleteFeedback,
+  findSellerEmailForListing,
 } from "@/lib/admin-store";
 import {
   isAuthenticated,
@@ -41,9 +42,15 @@ import {
   sanitizeStringArray,
   sanitizeObject,
 } from "@/lib/sanitize";
-import { safeLog, safeError } from "@/lib/security-middleware";
+import { safeError } from "@/lib/security-middleware";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/server-rate-limit";
 import { getRateLimitIdentifier } from "@/lib/sanitize";
+import {
+  sendListingReceivedEmail,
+  sendListingApprovedEmail,
+  sendListingRejectedEmail,
+  getResendConfig,
+} from "@/lib/resend";
 
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status });
@@ -156,6 +163,20 @@ export async function POST(request: NextRequest) {
       trackingNumber,
       submittedAt: new Date().toISOString(),
     });
+
+    // Send confirmation email to the submitter (best-effort, never fails the request)
+    if (submission.contactEmail) {
+      sendListingReceivedEmail({
+        contactName: submission.contactName,
+        contactEmail: submission.contactEmail,
+        trackingNumber: submission.trackingNumber,
+        listingTitle: submission.title,
+        listingAddress: submission.address,
+        listingPrice: submission.price,
+      }).then((res) => {
+        if (!res.ok) safeError("Confirmation email failed", res.error);
+      }).catch((err) => safeError("Confirmation email exception", err));
+    }
 
     return json({ ok: true, trackingNumber, submission });
   }
@@ -291,7 +312,7 @@ export async function POST(request: NextRequest) {
 
     // ─── Settings ────────────────────────────────────────────────────────
     if (action === "get-settings") {
-      return json(getSiteSettings());
+      return json({ ...getSiteSettings(), resend: getResendConfig() });
     }
     if (action === "save-settings") {
       let body: Record<string, unknown>;
@@ -453,6 +474,10 @@ export async function POST(request: NextRequest) {
         daysOnMarket: sanitizePositiveInt(sanitized.daysOnMarket, 999),
         lat: Number(sanitized.lat) || 35.5951,
         lng: Number(sanitized.lng) || -82.5515,
+        contactEmail: sanitizeEmail(sanitized.contactEmail) || undefined,
+        contactName: sanitizeString(sanitized.contactName, 100) || undefined,
+        contactPhone: sanitizeString(sanitized.contactPhone, 20) || undefined,
+        source: (sanitized.source as "manual" | "fsbo" | "craigslist" | "csv" | undefined) || "manual",
       };
       const result = saveAdminListing(listing as unknown as Parameters<typeof saveAdminListing>[0]);
       return json(result);
@@ -484,9 +509,52 @@ export async function POST(request: NextRequest) {
       }
       const trackingNumber = sanitizeTrackingNumber(body.trackingNumber);
       if (!trackingNumber) return json({ error: "Invalid tracking number" }, 400);
-      const { trackingNumber: _tn, ...updates } = sanitizeObject(body) as Record<string, unknown>;
+      const { trackingNumber: _tn, id: _id, submittedAt: _sa, ...rawUpdates } =
+        sanitizeObject(body) as Record<string, unknown>;
+      const updates: Record<string, unknown> = {};
+      if (typeof rawUpdates.status === "string") {
+        if (["pending", "approved", "rejected"].includes(rawUpdates.status)) {
+          updates.status = rawUpdates.status;
+          updates.reviewedAt = new Date().toISOString();
+        }
+      }
+      if (typeof rawUpdates.rejectionReason === "string") {
+        updates.rejectionReason = sanitizeString(rawUpdates.rejectionReason, 1000);
+      }
       const result = updateListingSubmission(trackingNumber, updates as Parameters<typeof updateListingSubmission>[1]);
       if (!result) return json({ error: "Not found" }, 404);
+
+      // Send status-change emails (best-effort)
+      if (updates.status === "approved" && result.contactEmail) {
+        sendListingApprovedEmail({
+          contactName: result.contactName,
+          contactEmail: result.contactEmail,
+          trackingNumber: result.trackingNumber,
+          listingTitle: result.title,
+          listingAddress: result.address,
+          listingPrice: result.price,
+        })
+          .then((res) => {
+            if (!res.ok) safeError("Approval email failed", res.error);
+          })
+          .catch((err) => safeError("Approval email exception", err));
+      } else if (updates.status === "rejected" && result.contactEmail) {
+        const reason =
+          (updates.rejectionReason as string | undefined) ||
+          "Our team wasn't able to approve this listing. Please review your submission and feel free to reply with questions.";
+        sendListingRejectedEmail({
+          contactName: result.contactName,
+          contactEmail: result.contactEmail,
+          trackingNumber: result.trackingNumber,
+          listingTitle: result.title,
+          reason,
+        })
+          .then((res) => {
+            if (!res.ok) safeError("Rejection email failed", res.error);
+          })
+          .catch((err) => safeError("Rejection email exception", err));
+      }
+
       return json(result);
     }
 
@@ -540,7 +608,17 @@ export async function POST(request: NextRequest) {
 
     // ─── Contact Messages ───────────────────────────────────────────────
     if (action === "get-contact-messages") {
-      return json(getContactMessages());
+      const msgs = getContactMessages().sort(
+        (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+      );
+      // Enrich each message with a seller email (if findable) so the
+      // admin panel can show a "Forward to seller" action.
+      const enriched = msgs.map((m) => {
+        if (m.sellerEmail) return m;
+        const seller = findSellerEmailForListing(m.listingId);
+        return seller ? { ...m, sellerEmail: seller.email, sellerName: seller.name } : m;
+      });
+      return json(enriched);
     }
     if (action === "delete-contact-message") {
       let body: Record<string, unknown>;

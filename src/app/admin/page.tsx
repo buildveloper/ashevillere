@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings, PenLine, PlusCircle, Download, BarChart3, MessageSquare, Star } from "lucide-react";
+import { Lock, Sparkles, ArrowRight, Eye, EyeOff, TrendingUp, Building2, FileText, Settings, PenLine, PlusCircle, Download, BarChart3, MessageSquare, Star, Inbox } from "lucide-react";
 import {
   AdminSidebar,
   AdminToast,
@@ -15,6 +15,7 @@ import { BlogManagerPanel } from "@/components/admin/BlogManagerPanel";
 import { SettingsPanel } from "@/components/admin/SettingsPanel";
 import { AIContentPanel } from "@/components/admin/AIContentPanel";
 import { ListingSubmissionPanel } from "@/components/admin/ListingSubmissionPanel";
+import { SubmissionsPanel } from "@/components/admin/SubmissionsPanel";
 import { DataImportPanel } from "@/components/admin/DataImportPanel";
 import { AnalyticsPanel } from "@/components/admin/AnalyticsPanel";
 import { InquiriesPanel } from "@/components/admin/InquiriesPanel";
@@ -205,6 +206,8 @@ export default function AdminPage() {
         return <AIContentPanel />;
       case "listings":
         return <ListingSubmissionPanel />;
+      case "submissions":
+        return <SubmissionsPanel />;
       case "import":
         return <DataImportPanel />;
       case "analytics":
@@ -265,11 +268,12 @@ const QUICK_ACTIONS: { label: string; section: Section; description: string; ico
   { label: "Blog Posts", section: "blog", description: "Create, edit, and manage blog articles", icon: FileText },
   { label: "AI Content", section: "ai", description: "Generate SEO blog posts with Groq AI", icon: PenLine },
   { label: "Listings", section: "listings", description: "Add home listings + review public FSBO submissions", icon: PlusCircle },
+  { label: "Submissions", section: "submissions", description: "Review pending FSBO listings and contact submitters", icon: Inbox },
   { label: "Data Import", section: "import", description: "Import public data from county records, CSV, Craigslist", icon: Download },
   { label: "Analytics", section: "analytics", description: "Track page views, chat usage, PDF downloads, and affiliate clicks", icon: BarChart3 },
-  { label: "Inquiries", section: "inquiries", description: "View contact seller messages and buyer inquiries", icon: MessageSquare },
+  { label: "Inquiries", section: "inquiries", description: "View contact seller messages and forward to sellers", icon: MessageSquare },
   { label: "Feedback", section: "feedback", description: "Review user feedback and star ratings", icon: Star },
-  { label: "Site Settings", section: "settings", description: "Timestamps, data export, and system info", icon: Settings },
+  { label: "Site Settings", section: "settings", description: "Timestamps, data export, Resend email config, and system info", icon: Settings },
 ];
 
 function DashboardHome({ onNavigate }: { onNavigate: (s: Section) => void }) {

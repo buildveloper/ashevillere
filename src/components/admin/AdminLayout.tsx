@@ -19,9 +19,10 @@ import {
   BarChart3,
   MessageSquare,
   Star,
+  Inbox,
 } from "lucide-react";
 
-export type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings" | "ai" | "listings" | "import" | "analytics" | "inquiries" | "feedback";
+export type Section = "dashboard" | "market" | "neighborhoods" | "blog" | "settings" | "ai" | "listings" | "submissions" | "import" | "analytics" | "inquiries" | "feedback";
 
 const SIDEBAR_ITEMS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,6 +31,7 @@ const SIDEBAR_ITEMS: { id: Section; label: string; icon: React.ElementType }[] =
   { id: "blog", label: "Blog Posts", icon: FileText },
   { id: "ai", label: "AI Content", icon: Sparkles },
   { id: "listings", label: "Listings", icon: PlusCircle },
+  { id: "submissions", label: "Submissions", icon: Inbox },
   { id: "import", label: "Data Import", icon: Download },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "inquiries", label: "Inquiries", icon: MessageSquare },
