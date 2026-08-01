@@ -12,7 +12,7 @@ export interface LookupContext {
   city?: string;
 }
 
-export type PanelStatus = "checking" | "result" | "unavailable" | "error";
+export type PanelStatus = "checking" | "result" | "not-connected" | "unavailable" | "error";
 
 export interface LookupPanelResult {
   key: "flood" | "str" | "recovery";
@@ -41,8 +41,8 @@ export function classifyCityStatus(ctx: LookupContext): string {
 export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
   const [flood, str, recovery] = await Promise.all([
     fetchFlood(ctx),
-    fetchStr(ctx),
-    fetchRecovery(ctx),
+    fetchStr(),
+    fetchRecovery(),
   ]);
   return { flood, str, recovery };
 }
@@ -55,41 +55,48 @@ async function fetchFlood(ctx: LookupContext): Promise<LookupPanelResult> {
       status: PanelStatus;
       message?: string;
       value?: string;
+      zone?: string;
     };
-    return { key: "flood", ...data };
+    // Only surface a real result when FEMA actually returned a zone.
+    if (data.status === "result" && data.zone) {
+      return { key: "flood", status: "result", message: data.message, value: data.zone };
+    }
+    // FEMA is a Phase 4 wiring target; until a real zone is fetched, the
+    // panel is honestly "not yet connected", not "checked".
+    return {
+      key: "flood",
+      status: "not-connected",
+      message:
+        "Not yet connected — live Day 6. FEMA flood zone data is being wired to the National Flood Hazard Layer.",
+    };
   } catch {
-    return { key: "flood", status: "error", message: "Could not reach the flood check." };
+    return { key: "flood", status: "not-connected", message: "Not yet connected — live Day 6." };
   }
 }
 
-async function fetchStr(ctx: LookupContext): Promise<LookupPanelResult> {
-  try {
-    const url = `${getBase()}/api/str?lat=${ctx.latitude.toFixed(5)}&lon=${ctx.longitude.toFixed(5)}&zip=${encodeURIComponent(ctx.zip ?? "")}`;
-    const res = await fetch(url);
-    const data = (await res.json()) as {
-      status: PanelStatus;
-      message?: string;
-      value?: string;
-    };
-    return { key: "str", ...data };
-  } catch {
-    return { key: "str", status: "error", message: "Could not reach the STR check." };
-  }
+async function fetchStr(): Promise<LookupPanelResult> {
+  // STR eligibility is not wired to a real data source yet (Phase 5 of the
+  // rebuild spec). Do NOT present canned jurisdiction copy as a checked
+  // result — that is exactly the fake-data behavior this product exists to
+  // avoid. Return the honest not-connected state until real zoning data
+  // exists behind it.
+  return {
+    key: "str",
+    status: "not-connected",
+    message:
+      "Not yet connected — live Day 6. Parcel-level zoning and STR eligibility are being wired to Buncombe County GIS data.",
+  };
 }
 
-async function fetchRecovery(ctx: LookupContext): Promise<LookupPanelResult> {
-  try {
-    const url = `${getBase()}/api/recovery?lat=${ctx.latitude.toFixed(5)}&lon=${ctx.longitude.toFixed(5)}`;
-    const res = await fetch(url);
-    const data = (await res.json()) as {
-      status: PanelStatus;
-      message?: string;
-      value?: string;
-    };
-    return { key: "recovery", ...data };
-  } catch {
-    return { key: "recovery", status: "error", message: "Could not reach the recovery check." };
-  }
+async function fetchRecovery(): Promise<LookupPanelResult> {
+  // Recovery context is not wired to a real data source yet (Phase 6 of the
+  // rebuild spec). Same rule: no canned result presented as checked.
+  return {
+    key: "recovery",
+    status: "not-connected",
+    message:
+      "Not yet connected — live Day 6. Helene recovery and damage context are being wired to county/state data.",
+  };
 }
 
 /** Absolute base URL for server-side fetches (handles Vercel + localhost). */

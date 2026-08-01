@@ -7,9 +7,6 @@ export interface PanelSpec {
   eyebrow: string;
   title: string;
   detail: string;
-  source: string;
-  sourceUrl: string;
-  lastUpdated: string;
   accent: "contour" | "river" | "clay";
 }
 
@@ -33,22 +30,37 @@ const ACCENTS = {
 
 /**
  * One data panel: Flood / STR / Recovery.
- * ALWAYS shows a result (or an honest "unavailable" message) + source +
- * last-updated + disclaimer link — per AGENTS.md hard constraint.
+ *
+ * Honesty rule (AGENTS.md): never present a "checked" state or a citation
+ * for data that was not actually fetched. States:
+ * - checking: the lookup is in flight.
+ * - not-connected: the data source is not wired yet — no fake result, no
+ *   fake citation. Shows the live date instead.
+ * - result: only after real data was fetched; shows source + last-updated.
+ * - unavailable/error: upstream failed; links to the official source.
  */
 export default function ResultPanel({
   spec,
   status,
   message,
+  sourceLabel,
+  sourceUrl,
+  lastUpdated,
   disclaimerHref = "/methodology",
 }: {
   spec: PanelSpec;
   status: LookupPanelResult["status"];
   message?: string;
+  sourceLabel?: string;
+  sourceUrl?: string;
+  lastUpdated?: string;
   disclaimerHref?: string;
 }) {
   const accent = ACCENTS[spec.accent];
   const checking = status === "checking";
+  const notConnected = status === "not-connected";
+  // Only show a source citation when we actually have data behind it.
+  const hasCitation = status === "result" && sourceLabel && sourceUrl;
 
   return (
     <div
@@ -59,22 +71,37 @@ export default function ResultPanel({
           {spec.eyebrow}
         </span>
         <span className="flex items-center gap-2 font-mono text-[11px] text-muted">
-          <span className={`h-1.5 w-1.5 rounded-full ${checking ? "animate-pulse bg-muted" : accent.dot}`} />
-          {checking ? "CHECKING" : status === "result" ? "CHECKED" : "UNAVAILABLE"}
+          <span className={`h-1.5 w-1.5 rounded-full ${checking ? "animate-pulse bg-muted" : notConnected ? "bg-muted" : accent.dot}`} />
+          {checking
+            ? "CHECKING"
+            : notConnected
+              ? "NOT YET CONNECTED"
+              : status === "result"
+                ? "CHECKED"
+                : "UNAVAILABLE"}
         </span>
       </div>
 
       <h3 className="font-display text-2xl font-medium text-ink">{spec.title}</h3>
 
-      {status === "checking" && (
+      {checking && (
         <p className="text-sm leading-relaxed text-secondary">{spec.detail}</p>
+      )}
+
+      {notConnected && (
+        <div className="rounded-lg border border-dashed border-line bg-paper/60 p-4">
+          <p className="text-sm leading-relaxed text-secondary">
+            {message ??
+              "Not yet connected — live Day 6. This panel is being wired to its public data source."}
+          </p>
+        </div>
       )}
 
       {status === "result" && message && (
         <p className="text-sm leading-relaxed text-secondary">{message}</p>
       )}
 
-      {status !== "result" && status !== "checking" && (
+      {status !== "result" && status !== "checking" && status !== "not-connected" && (
         <div className="rounded-lg border border-line bg-paper/60 p-4">
           <p className="text-sm leading-relaxed text-secondary">
             {status === "unavailable"
@@ -85,22 +112,35 @@ export default function ResultPanel({
       )}
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
-        <span className="font-mono text-[11px] text-muted">
-          {spec.source} · {spec.lastUpdated}
-        </span>
-        <div className="flex items-center gap-3 font-mono text-[11px]">
-          <a
-            href={spec.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-river transition-colors hover:text-ink"
-          >
-            SOURCE ↗
-          </a>
-          <a href={disclaimerHref} className="text-muted transition-colors hover:text-ink">
-            DISCLAIMER
-          </a>
-        </div>
+        {hasCitation ? (
+          <>
+            <span className="font-mono text-[11px] text-muted">
+              {sourceLabel} · {lastUpdated}
+            </span>
+            <div className="flex items-center gap-3 font-mono text-[11px]">
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-river transition-colors hover:text-ink"
+              >
+                SOURCE ↗
+              </a>
+              <a href={disclaimerHref} className="text-muted transition-colors hover:text-ink">
+                DISCLAIMER
+              </a>
+            </div>
+          </>
+        ) : (
+          <div className="flex w-full items-center justify-between gap-2 font-mono text-[11px]">
+            <span className="text-muted">
+              {notConnected ? "WIRING TO PUBLIC DATA · LIVE DAY 6" : "SOURCE PENDING"}
+            </span>
+            <a href={disclaimerHref} className="text-muted transition-colors hover:text-ink">
+              DISCLAIMER
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

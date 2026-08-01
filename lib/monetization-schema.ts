@@ -67,6 +67,10 @@ export interface ProSubscription {
 /* ------------------------------------------------------------------ */
 
 export const MONETIZATION_DDL = `
+-- Compliance (NC G.S. 93A-6(b)): no payment is tied to a lead, referral, or
+-- outcome. Neither table stores or references consumer leads; sponsors pay a
+-- flat fee for visibility, and Pro subscribers pay for data-tool access only.
+
 -- 3.1 Flat sponsorship / placement slots
 CREATE TABLE sponsors (
   id            TEXT PRIMARY KEY,
@@ -79,7 +83,7 @@ CREATE TABLE sponsors (
   url           TEXT,
   active_from   DATE NOT NULL,
   active_to     DATE NOT NULL,
-  price_cents   INTEGER NOT NULL CHECK (price_cents >= 0),
+  price_cents   INTEGER NOT NULL CHECK (price_cents >= 0), -- flat fee, not per lead
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -88,7 +92,7 @@ CREATE TABLE pro_subscriptions (
   id                    TEXT PRIMARY KEY,
   account_id            TEXT NOT NULL,
   plan                  TEXT NOT NULL DEFAULT 'pro_monthly',
-  price_usd_cents       INTEGER NOT NULL DEFAULT 4900, -- $49/mo placeholder
+  price_usd_cents       INTEGER NOT NULL DEFAULT 4900, -- $49/mo placeholder; tool access, not leads
   status                TEXT NOT NULL CHECK (status IN ('active', 'trialing', 'past_due', 'canceled')),
   current_period_start  DATE NOT NULL,
   current_period_end    DATE NOT NULL,

@@ -13,9 +13,6 @@ const SPECS: PanelSpec[] = [
     eyebrow: "FLOOD",
     title: "Flood zone",
     detail: "FEMA National Flood Hazard Layer",
-    source: "FEMA NFHL",
-    sourceUrl: "https://www.fema.gov/flood-maps/national-flood-hazard-layer",
-    lastUpdated: "NFHL current effective",
     accent: "contour",
   },
   {
@@ -23,9 +20,6 @@ const SPECS: PanelSpec[] = [
     eyebrow: "STR",
     title: "STR eligibility",
     detail: "Buncombe County zoning overlay",
-    source: "Buncombe Co. GIS",
-    sourceUrl: "https://gis.buncombecounty.org",
-    lastUpdated: "Zoning overlay",
     accent: "river",
   },
   {
@@ -33,12 +27,19 @@ const SPECS: PanelSpec[] = [
     eyebrow: "RECOVERY",
     title: "Helene recovery",
     detail: "Post-storm recovery context",
-    source: "NC DPS · County",
-    sourceUrl: "https://www.ncdps.gov",
-    lastUpdated: "Recovery programs",
     accent: "clay",
   },
 ];
+
+// Citations are only rendered when real data was fetched for a panel.
+const SOURCE_CITATIONS: Record<
+  "flood" | "str" | "recovery",
+  { label: string; url: string; lastUpdated: string } | null
+> = {
+  flood: null,
+  str: null,
+  recovery: null,
+};
 
 const INITIAL: LookupResult = {
   flood: { key: "flood", status: "checking" },
@@ -106,7 +107,7 @@ export default function ResultsStage({
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] tracking-[0.18em] text-muted uppercase">
-            Lookup complete
+            Address located
           </p>
           <h2 className="mt-1 font-display text-3xl font-medium text-ink sm:text-4xl">
             {result.matchedAddress ?? "Your address"}
@@ -119,21 +120,27 @@ export default function ResultsStage({
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {SPECS.map((spec, i) => (
-          <div
-            key={spec.key}
-            ref={(el) => {
-              panelsRef.current[i] = el;
-            }}
-            className="opacity-0"
-          >
-            <ResultPanel
-              spec={spec}
-              status={statusOf(spec.key)}
-              message={lookup[spec.key]?.message}
-            />
-          </div>
-        ))}
+        {SPECS.map((spec, i) => {
+          const citation = SOURCE_CITATIONS[spec.key];
+          return (
+            <div
+              key={spec.key}
+              ref={(el) => {
+                panelsRef.current[i] = el;
+              }}
+              className="opacity-0"
+            >
+              <ResultPanel
+                spec={spec}
+                status={statusOf(spec.key)}
+                message={lookup[spec.key]?.message}
+                sourceLabel={citation?.label}
+                sourceUrl={citation?.url}
+                lastUpdated={citation?.lastUpdated}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
