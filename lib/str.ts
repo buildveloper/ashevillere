@@ -190,14 +190,17 @@ async function zoning(
  * Check the City of Asheville open data portal for a homestay permit registry.
  * Only returns "found" if a real dataset is reachable and structured;
  * otherwise "unchecked" — never fabricated permit status.
- * Tight timeout: this is best-effort only and must not stall the lookup.
+ * Single attempt, tight timeout: best-effort only, must not stall the lookup.
  */
 async function checkHomestayRegistry(): Promise<"found" | "not-found" | "unchecked"> {
   try {
     const url = new URL("https://data.ashevillenc.gov/api/3/action/package_search");
     url.searchParams.set("q", "homestay");
-    const res = await fetchWithRetry(url.toString(), 3000);
-    if (!res || !res.ok) return "unchecked";
+    const res = await fetch(url.toString(), {
+      signal: AbortSignal.timeout(3000),
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return "unchecked";
     const data = (await res.json()) as { success?: boolean; result?: { count?: number } };
     if (data.success && (data.result?.count ?? 0) > 0) return "found";
     return "not-found";
