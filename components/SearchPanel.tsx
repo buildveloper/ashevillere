@@ -1,23 +1,65 @@
 "use client";
 
 import { useState, type FormEvent, type KeyboardEvent } from "react";
+import type { GeocodeResult } from "@/lib/geocode";
+
+type PanelState =
+  | { kind: "idle" }
+  | { kind: "searching" }
+  | { kind: "outside"; message: string; matchedAddress?: string }
+  | { kind: "no-match"; message: string }
+  | { kind: "error"; message: string };
 
 /**
- * Address search — the entry point of the whole product.
- * On submit, signals Hero to stagger the result cards in.
+ * Address search — entry point of the product.
+ * Submits to the Census Geocoder via /api/geocode. On a successful
+ * in-scope geocode it hands the result up to Hero, which triggers the
+ * result-card stagger-in. Every other outcome renders its own clear
+ * message inline (outside coverage / no match / error).
  */
 export default function SearchPanel({
-  onSearch,
+  onInScope,
 }: {
-  onSearch: (address: string) => void;
+  onInScope: (result: GeocodeResult) => void;
 }) {
   const [value, setValue] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+  const [panel, setPanel] = useState<PanelState>({ kind: "idle" });
+
+  const lookup = async (address: string) => {
+    setPanel({ kind: "searching" });
+    try {
+      const res = await fetch(
+        `/api/geocode?address=${encodeURIComponent(address)}`
+      );
+      const data = (await res.json()) as GeocodeResult;
+      if (data.status === "in-scope") {
+        setPanel({ kind: "idle" });
+        onInScope(data);
+      } else if (data.status === "outside") {
+        setPanel({
+          kind: "outside",
+          message: data.message ?? "That address is outside Buncombe County.",
+          matchedAddress: data.matchedAddress,
+        });
+      } else if (data.status === "no-match") {
+        setPanel({
+          kind: "no-match",
+          message: data.message ?? "We couldn't find that address.",
+        });
+      } else {
+        setPanel({ kind: "error", message: data.message ?? "Something went wrong." });
+      }
+    } catch {
+      setPanel({
+        kind: "error",
+        message: "Could not reach the lookup service. Check your connection and try again.",
+      });
+    }
+  };
 
   const submit = () => {
-    if (!value.trim()) return;
-    setHasSearched(true);
-    onSearch(value.trim());
+    if (!value.trim() || panel.kind === "searching") return;
+    void lookup(value.trim());
   };
 
   const handleSubmit = (e: FormEvent) => {
@@ -66,15 +108,31 @@ export default function SearchPanel({
         />
         <button
           type="submit"
-          className="shrink-0 rounded-xl bg-pine px-5 py-2.5 text-sm font-medium text-card transition-colors duration-200 hover:bg-pine-2"
+          disabled={panel.kind === "searching"}
+          className="shrink-0 rounded-xl bg-pine px-5 py-2.5 text-sm font-medium text-card transition-colors duration-200 hover:bg-pine-2 disabled:cursor-wait disabled:opacity-60"
         >
-          Look up
+          {panel.kind === "searching" ? "Looking up…" : "Look up"}
         </button>
       </form>
-      <p className="mt-2 font-mono text-[11px] text-stone">
-        {hasSearched
-          ? `REQUESTED → ${value}`
-          : "FREE PUBLIC DATA · FEMA · NC FLOODPLAIN · BUNCOMBE CO GIS"}
+
+      <p
+        role="status"
+        aria-live="polite"
+        className="mt-2 font-mono text-[11px] leading-relaxed text-stone"
+      >
+        {panel.kind === "idle" &&
+          "FREE PUBLIC DATA · FEMA · NC FLOODPLAIN · BUNCOMBE CO GIS"}
+        {panel.kind === "searching" &&
+          `GEOCODING → ${value.toUpperCase()} · CENSUS BUREAU`}
+        {panel.kind === "no-match" && (
+          <span className="text-clay">NO MATCH — {panel.message}</span>
+        )}
+        {panel.kind === "outside" && (
+          <span className="text-clay">OUTSIDE COVERAGE — {panel.message}</span>
+        )}
+        {panel.kind === "error" && (
+          <span className="text-clay">ERROR — {panel.message}</span>
+        )}
       </p>
     </div>
   );

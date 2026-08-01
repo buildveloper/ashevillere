@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import ContourBackground from "./ContourBackground";
 import SearchPanel from "./SearchPanel";
 import ResultCard from "./ResultCard";
+import type { GeocodeResult } from "@/lib/geocode";
 
 /**
  * Hero — the single "big" motion moment of the site.
@@ -23,7 +24,8 @@ import ResultCard from "./ResultCard";
 export default function Hero() {
   const rootRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const searchingRef = useRef(false);
+  const animatingRef = useRef(false);
+  const [lastResult, setLastResult] = useState<GeocodeResult | null>(null);
 
   useGSAP(
     () => {
@@ -61,11 +63,20 @@ export default function Hero() {
     { scope: rootRef }
   );
 
-  const handleSearch = (address: string) => {
-    if (searchingRef.current || !address.trim()) return;
-    searchingRef.current = true;
+  const handleInScope = (result: GeocodeResult) => {
+    if (animatingRef.current) return;
+    animatingRef.current = true;
+    setLastResult(result);
 
     const cards = cardsRef.current.filter(Boolean) as HTMLDivElement[];
+
+    // Reset cards to hidden before the reveal.
+    gsap.set(cards, { opacity: 0, y: 24 });
+    cards.forEach((card) => {
+      card.dataset.status = "idle";
+      const statusText = card.querySelector("[data-status-text]");
+      if (statusText) statusText.textContent = "PENDING LOOKUP";
+    });
 
     // Reduced motion: snap to end state, no timeline.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -75,7 +86,7 @@ export default function Hero() {
         if (statusText) statusText.textContent = "CHECKED";
       });
       gsap.set(cards, { opacity: 1, y: 0 });
-      searchingRef.current = false;
+      animatingRef.current = false;
       return;
     }
 
@@ -114,7 +125,7 @@ export default function Hero() {
           const statusText = card.querySelector("[data-status-text]");
           if (statusText) statusText.textContent = "CHECKED";
         });
-        searchingRef.current = false;
+        animatingRef.current = false;
       });
   };
 
@@ -145,9 +156,20 @@ export default function Hero() {
             not sales pitches.
           </p>
           <div data-hero-fade className="opacity-0">
-            <SearchPanel onSearch={handleSearch} />
+            <SearchPanel onInScope={handleInScope} />
           </div>
         </div>
+
+        {lastResult && (
+          <p
+            data-lookup-confirm
+            className="mt-8 max-w-3xl font-mono text-[11px] leading-relaxed text-stone"
+          >
+            GECODED → {lastResult.matchedAddress ?? "matched"} ·{" "}
+            {lastResult.latitude?.toFixed(5)}, {lastResult.longitude?.toFixed(5)} ·{" "}
+            ZIP {lastResult.zip}
+          </p>
+        )}
 
         <div className="mt-14 grid gap-4 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
