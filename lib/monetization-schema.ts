@@ -1,12 +1,15 @@
 /**
  * Phase 3 — Monetization data model.
  *
- * Legal model: North Carolina law (NC Gen. Stat. § 93A-6(b)) prohibits
- * paying an unlicensed party for referring a client to a licensed broker.
- * This project therefore has NO referral/per-lead/per-outcome payments —
- * only (1) flat-fee sponsorship placement and (2) subscription access to
- * the data tool itself. Auth and payment flows are Phase 9; this file is
- * the schema only.
+ * Legal model: North Carolina's Real Estate License Law (G.S. 93A-2(a)
+ * defines brokerage activity; G.S. 93A-6(a)(9) gives the Real Estate
+ * Commission disciplinary power over a licensee who compensates an
+ * unlicensed person in violation of the License Law) makes paying an
+ * unlicensed party for referring a client to a licensed broker illegal —
+ * for both sides of the arrangement. This project therefore has NO
+ * referral/per-lead/per-outcome payments — only (1) flat-fee sponsorship
+ * placement and (2) subscription access to the data tool itself. Auth and
+ * payment flows are Phase 9; this file is the schema only.
  */
 
 /* ------------------------------------------------------------------ */
@@ -67,7 +70,7 @@ export interface ProSubscription {
 /* ------------------------------------------------------------------ */
 
 export const MONETIZATION_DDL = `
--- Compliance (NC G.S. 93A-6(b)): no payment is tied to a lead, referral, or
+-- Compliance (NC G.S. 93A-2(a), G.S. 93A-6(a)(9)): no payment is tied to a lead, referral, or
 -- outcome. Neither table stores or references consumer leads; sponsors pay a
 -- flat fee for visibility, and Pro subscribers pay for data-tool access only.
 
