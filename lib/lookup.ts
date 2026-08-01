@@ -85,7 +85,7 @@ async function fetchFlood(ctx: LookupContext): Promise<LookupPanelResult> {
             }
           : undefined,
         disclaimer:
-          "This is informational and not a substitute for an official flood determination, elevation certificate, or insurance agent's assessment.",
+          "This is informational and not a substitute for an official flood determination, elevation certificate, or insurance agent's assessment. Verify with FEMA and your insurer before relying on it.",
       };
     }
     // FEMA/NC unreachable or returned nothing — honest unavailable state,

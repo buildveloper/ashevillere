@@ -8,6 +8,8 @@ export interface PanelSpec {
   title: string;
   detail: string;
   accent: "contour" | "river" | "clay";
+  /** Official source URL to point users to in unavailable/error states. */
+  officialSourceUrl?: string;
 }
 
 const ACCENTS = {
@@ -139,6 +141,20 @@ export default function ResultPanel({
               </a>
             </div>
           </>
+        ) : status === "unavailable" && spec.officialSourceUrl ? (
+          <div className="flex w-full items-center justify-between gap-2 font-mono text-[11px]">
+            <a
+              href={spec.officialSourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-river transition-colors hover:text-ink"
+            >
+              OFFICIAL SOURCE ↗
+            </a>
+            <a href={disclaimerHref} className="text-muted transition-colors hover:text-ink">
+              DISCLAIMER
+            </a>
+          </div>
         ) : (
           <div className="flex w-full items-center justify-between gap-2 font-mono text-[11px]">
             <span className="text-muted">

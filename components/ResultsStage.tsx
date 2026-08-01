@@ -14,6 +14,7 @@ const SPECS: PanelSpec[] = [
     title: "Flood zone",
     detail: "FEMA National Flood Hazard Layer",
     accent: "contour",
+    officialSourceUrl: "https://www.fema.gov/flood-maps/national-flood-hazard-layer",
   },
   {
     key: "str",
