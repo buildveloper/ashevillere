@@ -76,7 +76,7 @@ const RESIDENTIAL_DISTRICTS = new Set([
 ]);
 
 const DISCLAIMER =
-  "HOA covenants can further restrict short-term rentals independent of city/county zoning — this tool cannot check those, and permit status must be confirmed directly with the City of Asheville.";
+  "HOA covenants can further restrict short-term rentals independent of city/county zoning — this tool cannot check those.";
 
 /** Fetch with explicit timeout + retry once. Returns Response or null. */
 async function fetchWithRetry(
@@ -190,12 +190,13 @@ async function zoning(
  * Check the City of Asheville open data portal for a homestay permit registry.
  * Only returns "found" if a real dataset is reachable and structured;
  * otherwise "unchecked" — never fabricated permit status.
+ * Tight timeout: this is best-effort only and must not stall the lookup.
  */
 async function checkHomestayRegistry(): Promise<"found" | "not-found" | "unchecked"> {
   try {
     const url = new URL("https://data.ashevillenc.gov/api/3/action/package_search");
     url.searchParams.set("q", "homestay");
-    const res = await fetchWithRetry(url.toString(), 8000);
+    const res = await fetchWithRetry(url.toString(), 3000);
     if (!res || !res.ok) return "unchecked";
     const data = (await res.json()) as { success?: boolean; result?: { count?: number } };
     if (data.success && (data.result?.count ?? 0) > 0) return "found";
@@ -238,7 +239,7 @@ export function applyStrRules(input: {
       );
     } else if (!isResort) {
       parts.push(
-        "This is not a residential zone, so a homestay permit is unlikely to apply — confirm with the City of Asheville."
+        "This is not a residential zone, so a homestay permit is unlikely to apply."
       );
     }
     parts.push(
@@ -255,9 +256,8 @@ export function applyStrRules(input: {
     parts.push(
       `Outside any city/town limits (${name}), zoning ${
         z ?? "unknown"
-      }. Buncombe County's STR rules are materially different from Asheville's and generally more permissive — whole-home rentals are typically allowed with county registration and occupancy taxes.`
+      }. Buncombe County's STR rules are materially different from Asheville's and generally more permissive — check the current county rules before relying on this.`
     );
-    parts.push("Confirm registration and tax requirements with Buncombe County.");
     // HOA caveat (always — spec requires it on every STR panel).
     parts.push(DISCLAIMER);
     return { value: "county", message: parts.join(" ") };
@@ -277,8 +277,13 @@ export async function lookupStrEligibility(
   lat: number,
   lon: number
 ): Promise<StrResult> {
-  // 1) Jurisdiction (point-in-polygon on the county's Cities & Towns layer).
-  const jur = await jurisdiction(lat, lon);
+  // 1) Jurisdiction (point-in-polygon) + homestay registry check run in
+  // parallel — they are independent. Zoning depends on jurisdiction, so it
+  // runs after (but is fast; ~1s on Vercel's network).
+  const [jur, registry] = await Promise.all([
+    jurisdiction(lat, lon),
+    checkHomestayRegistry(),
+  ]);
   if (!jur) {
     return {
       status: "unavailable",
@@ -289,9 +294,6 @@ export async function lookupStrEligibility(
 
   // 2) Zoning district.
   const zone = await zoning(lat, lon, jur);
-
-  // 3) Homestay permit registry (best-effort; honest if unchecked).
-  const registry = await checkHomestayRegistry();
 
   // Apply the hardcoded rule set.
   const applied = applyStrRules({

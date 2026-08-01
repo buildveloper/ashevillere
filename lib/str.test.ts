@@ -51,7 +51,7 @@ describe("applyStrRules — county jurisdiction", () => {
     expect(r.value).toBe("county");
     expect(r.message).toContain("materially different");
     expect(r.message).toContain("more permissive");
-    expect(r.message).toContain("county registration");
+    expect(r.message).toContain("check the current county rules");
   });
 });
 

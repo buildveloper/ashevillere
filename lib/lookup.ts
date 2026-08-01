@@ -1,9 +1,14 @@
 /**
  * Lookup orchestration — runs flood / STR / recovery checks in parallel and
- * returns a typed result per panel. Each source is a server-side proxy with
- * a short timeout; failures degrade to an honest `unavailable` state rather
- * than fabricated data (AGENTS.md: never imply data we didn't fetch).
+ * returns a typed result per panel. Each source is called DIRECTLY (in-process,
+ * no HTTP self-fetch — the orchestrator runs server-side), with short
+ * timeouts; failures degrade to an honest `unavailable` state rather than
+ * fabricated data (AGENTS.md: never imply data we didn't fetch).
  */
+
+import { lookupFloodZone, type FloodResult } from "./flood";
+import { lookupStrEligibility, type StrResult } from "./str";
+import { lookupRecoveryContext, type RecoveryResult } from "./recovery";
 
 export interface LookupContext {
   latitude: number;
@@ -37,64 +42,44 @@ export interface LookupResult {
   recovery: LookupPanelResult;
 }
 
-/** Zip-code → "inside city limits" hint (Buncombe municipalities). */
-const CITY_ZIPS = new Set(["28801", "28802", "28803", "28804", "28805", "28806", "28711"]);
-
-export function classifyCityStatus(ctx: LookupContext): string {
-  if (!ctx.zip) return "Outside city limits — county rules apply.";
-  if (CITY_ZIPS.has(ctx.zip)) return "Inside Asheville city limits — city STR rules apply.";
-  return "Outside city limits — county rules apply.";
-}
-
 export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
+  // Run all three checks in parallel — they are independent.
   const [flood, str, recovery] = await Promise.all([
-    fetchFlood(ctx),
-    fetchStr(ctx),
-    fetchRecovery(),
+    runFlood(ctx),
+    runStr(ctx),
+    runRecovery(),
   ]);
   return { flood, str, recovery };
 }
 
-async function fetchFlood(ctx: LookupContext): Promise<LookupPanelResult> {
+/** Flood panel: call the flood module directly, map to the panel shape. */
+async function runFlood(ctx: LookupContext): Promise<LookupPanelResult> {
   try {
-    const url = `${getBase()}/api/flood?lat=${ctx.latitude.toFixed(5)}&lon=${ctx.longitude.toFixed(5)}`;
-    const res = await fetch(url);
-    const data = (await res.json()) as {
-      status: PanelStatus;
-      message?: string;
-      value?: string;
-      zone?: string;
-      lomaLomr?: "none" | "loma" | "lomr" | "unknown";
-      ncNote?: string;
-      sources?: Array<{ name: string; url: string; lastUpdated: string }>;
-    };
-    // Only surface a real result when FEMA actually returned a zone.
-    if (data.status === "result" && data.zone) {
+    const r: FloodResult = await lookupFloodZone(ctx.latitude, ctx.longitude);
+    if (r.status === "result" && r.zone) {
       return {
         key: "flood",
         status: "result",
-        message: data.message,
-        value: data.zone,
-        lomaLomr: data.lomaLomr,
-        ncNote: data.ncNote,
-        source: data.sources?.[0]
+        message: r.message,
+        value: r.zone,
+        lomaLomr: r.lomaLomr,
+        ncNote: r.ncNote,
+        source: r.sources?.[0]
           ? {
-              label: data.sources[0].name,
-              url: data.sources[0].url,
-              lastUpdated: data.sources[0].lastUpdated,
+              label: r.sources[0].name,
+              url: r.sources[0].url,
+              lastUpdated: r.sources[0].lastUpdated,
             }
           : undefined,
         disclaimer:
           "This is informational and not a substitute for an official flood determination, elevation certificate, or insurance agent's assessment. Verify with FEMA and your insurer before relying on it.",
       };
     }
-    // FEMA/NC unreachable or returned nothing — honest unavailable state,
-    // never a silent fallback to fake data.
     return {
       key: "flood",
       status: "unavailable",
       message:
-        data.message ??
+        r.message ??
         "FEMA's flood map service is temporarily unreachable. We're not showing guessed data — check the official FEMA map.",
     };
   } catch {
@@ -107,40 +92,30 @@ async function fetchFlood(ctx: LookupContext): Promise<LookupPanelResult> {
   }
 }
 
-async function fetchStr(ctx: LookupContext): Promise<LookupPanelResult> {
+/** STR panel: call the STR module directly, map to the panel shape. */
+async function runStr(ctx: LookupContext): Promise<LookupPanelResult> {
   try {
-    const url = `${getBase()}/api/str?lat=${ctx.latitude.toFixed(5)}&lon=${ctx.longitude.toFixed(5)}`;
-    const res = await fetch(url);
-    const data = (await res.json()) as {
-      status: PanelStatus;
-      message?: string;
-      value?: string;
-      zoning?: string;
-      permitRegistry?: "found" | "not-found" | "unchecked";
-      source?: { label: string; url: string; lastUpdated: string };
-    };
-    // Only surface a real result when the GIS fetch succeeded.
-    if (data.status === "result") {
+    const r: StrResult = await lookupStrEligibility(ctx.latitude, ctx.longitude);
+    if (r.status === "result") {
       return {
         key: "str",
         status: "result",
-        message: data.message,
-        value: data.value,
-        source: data.source
+        message: r.message,
+        value: r.value,
+        source: r.source
           ? {
-              label: data.source.label,
-              url: data.source.url,
-              lastUpdated: data.source.lastUpdated,
+              label: r.source.label,
+              url: r.source.url,
+              lastUpdated: r.source.lastUpdated,
             }
           : undefined,
       };
     }
-    // Buncombe GIS unreachable — honest unavailable state, never fake data.
     return {
       key: "str",
       status: "unavailable",
       message:
-        data.message ??
+        r.message ??
         "Buncombe County's GIS service is temporarily unreachable. We're not showing guessed data — check the official zoning map.",
     };
   } catch {
@@ -153,21 +128,16 @@ async function fetchStr(ctx: LookupContext): Promise<LookupPanelResult> {
   }
 }
 
-async function fetchRecovery(): Promise<LookupPanelResult> {
-  // Recovery context is not wired to a real data source yet (Phase 6 of the
-  // rebuild spec). Same rule: no canned result presented as checked.
+/** Recovery panel: still not-connected (Phase 6). */
+async function runRecovery(): Promise<LookupPanelResult> {
+  const r: RecoveryResult = await lookupRecoveryContext();
+  if (r.status === "result") {
+    return { key: "recovery", status: "not-connected", message: r.message };
+  }
   return {
     key: "recovery",
     status: "not-connected",
     message:
       "Not yet connected — live Day 6. Helene recovery and damage context are being wired to county/state data.",
   };
-}
-
-/** Absolute base URL for server-side fetches (handles Vercel + localhost). */
-function getBase(): string {
-  if (typeof window !== "undefined") return "";
-  const env = process.env.NEXT_PUBLIC_SITE_URL;
-  if (env) return env.replace(/\/$/, "");
-  return `http://localhost:${process.env.PORT ?? 3000}`;
 }
