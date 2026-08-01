@@ -1,25 +1,68 @@
 import { describe, expect, it } from "vitest";
-import { classifyStrJurisdiction } from "./str";
+import { applyStrRules } from "./str";
 
-describe("classifyStrJurisdiction", () => {
-  it("classifies Asheville city zips as city", () => {
-    const r = classifyStrJurisdiction("28801");
-    expect(r.status).toBe("result");
+describe("applyStrRules — city jurisdiction", () => {
+  it("prohibits whole-home STR in non-resort city zoning (2018 ordinance)", () => {
+    const r = applyStrRules({
+      jurisdiction: "city",
+      jurisdictionName: "CITY OF ASHEVILLE",
+      zoning: "CBD",
+      permitRegistry: "unchecked",
+    });
     expect(r.value).toBe("city");
-    expect(r.message).toContain("city limits");
+    expect(r.message).toContain("prohibited outside resort districts");
+    expect(r.message).toContain("2018 ordinance");
   });
 
-  it("classifies county zips as county", () => {
-    const r = classifyStrJurisdiction("28787"); // Weaverville
-    expect(r.status).toBe("result");
+  it("allows whole-home STR in a resort district", () => {
+    const r = applyStrRules({
+      jurisdiction: "city",
+      jurisdictionName: "CITY OF ASHEVILLE",
+      zoning: "RES",
+      permitRegistry: "unchecked",
+    });
+    expect(r.value).toBe("city");
+    expect(r.message).toContain("resort district");
+    expect(r.message).toContain("may be permitted");
+  });
+
+  it("allows homestay in residential city zoning with permit note", () => {
+    const r = applyStrRules({
+      jurisdiction: "city",
+      jurisdictionName: "CITY OF ASHEVILLE",
+      zoning: "RS-2",
+      permitRegistry: "unchecked",
+    });
+    expect(r.value).toBe("city");
+    expect(r.message).toContain("homestays");
+    expect(r.message).toContain("city permit");
+    expect(r.message).toContain("confirmed directly with the City of Asheville");
+  });
+});
+
+describe("applyStrRules — county jurisdiction", () => {
+  it("flags unincorporated county as more permissive", () => {
+    const r = applyStrRules({
+      jurisdiction: "county",
+      jurisdictionName: "Unincorporated Buncombe County",
+      zoning: "R-3",
+      permitRegistry: "unchecked",
+    });
     expect(r.value).toBe("county");
-    expect(r.message).toContain("Outside Asheville city limits");
+    expect(r.message).toContain("materially different");
+    expect(r.message).toContain("more permissive");
+    expect(r.message).toContain("county registration");
   });
+});
 
-  it("handles missing zip honestly", () => {
-    const r = classifyStrJurisdiction(undefined);
-    expect(r.status).toBe("result");
-    expect(r.value).toBe("unknown");
-    expect(r.message).toContain("couldn't determine");
+describe("applyStrRules — HOA disclaimer", () => {
+  it("always includes the HOA caveat", () => {
+    const r = applyStrRules({
+      jurisdiction: "county",
+      jurisdictionName: "Unincorporated Buncombe County",
+      zoning: "R-3",
+      permitRegistry: "unchecked",
+    });
+    expect(r.message).toContain("HOA covenants");
   });
 });

@@ -22,6 +22,7 @@ const SPECS: PanelSpec[] = [
     title: "STR eligibility",
     detail: "Buncombe County zoning overlay",
     accent: "river",
+    officialSourceUrl: "https://gis.buncombecounty.org",
   },
   {
     key: "recovery",

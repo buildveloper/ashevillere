@@ -49,7 +49,7 @@ export function classifyCityStatus(ctx: LookupContext): string {
 export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
   const [flood, str, recovery] = await Promise.all([
     fetchFlood(ctx),
-    fetchStr(),
+    fetchStr(ctx),
     fetchRecovery(),
   ]);
   return { flood, str, recovery };
@@ -107,18 +107,50 @@ async function fetchFlood(ctx: LookupContext): Promise<LookupPanelResult> {
   }
 }
 
-async function fetchStr(): Promise<LookupPanelResult> {
-  // STR eligibility is not wired to a real data source yet (Phase 5 of the
-  // rebuild spec). Do NOT present canned jurisdiction copy as a checked
-  // result — that is exactly the fake-data behavior this product exists to
-  // avoid. Return the honest not-connected state until real zoning data
-  // exists behind it.
-  return {
-    key: "str",
-    status: "not-connected",
-    message:
-      "Not yet connected — live Day 6. Parcel-level zoning and STR eligibility are being wired to Buncombe County GIS data.",
-  };
+async function fetchStr(ctx: LookupContext): Promise<LookupPanelResult> {
+  try {
+    const url = `${getBase()}/api/str?lat=${ctx.latitude.toFixed(5)}&lon=${ctx.longitude.toFixed(5)}`;
+    const res = await fetch(url);
+    const data = (await res.json()) as {
+      status: PanelStatus;
+      message?: string;
+      value?: string;
+      zoning?: string;
+      permitRegistry?: "found" | "not-found" | "unchecked";
+      source?: { label: string; url: string; lastUpdated: string };
+    };
+    // Only surface a real result when the GIS fetch succeeded.
+    if (data.status === "result") {
+      return {
+        key: "str",
+        status: "result",
+        message: data.message,
+        value: data.value,
+        source: data.source
+          ? {
+              label: data.source.label,
+              url: data.source.url,
+              lastUpdated: data.source.lastUpdated,
+            }
+          : undefined,
+      };
+    }
+    // Buncombe GIS unreachable — honest unavailable state, never fake data.
+    return {
+      key: "str",
+      status: "unavailable",
+      message:
+        data.message ??
+        "Buncombe County's GIS service is temporarily unreachable. We're not showing guessed data — check the official zoning map.",
+    };
+  } catch {
+    return {
+      key: "str",
+      status: "unavailable",
+      message:
+        "Buncombe County's GIS service is temporarily unreachable. We're not showing guessed data — check the official zoning map.",
+    };
+  }
 }
 
 async function fetchRecovery(): Promise<LookupPanelResult> {
