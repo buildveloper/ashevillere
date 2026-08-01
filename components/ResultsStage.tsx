@@ -32,6 +32,8 @@ const SPECS: PanelSpec[] = [
 ];
 
 // Citations are only rendered when real data was fetched for a panel.
+// The flood citation comes from the lookup payload (only present on a real
+// FEMA result); STR/Recovery have no citation until wired.
 const SOURCE_CITATIONS: Record<
   "flood" | "str" | "recovery",
   { label: string; url: string; lastUpdated: string } | null
@@ -40,7 +42,6 @@ const SOURCE_CITATIONS: Record<
   str: null,
   recovery: null,
 };
-
 const INITIAL: LookupResult = {
   flood: { key: "flood", status: "checking" },
   str: { key: "str", status: "checking" },
@@ -50,7 +51,9 @@ const INITIAL: LookupResult = {
 /**
  * ResultsStage — the product's payoff moment. Shows the geocoded address,
  * runs the three checks in parallel, and staggers the panels in as each
- * resolves. Panels always show a real result or an honest unavailable state.
+ * resolves. Panels always show a real result or an honest state.
+ * Only the FLOOD panel is wired to real data (FEMA NFHL + LOMA/LOMR + NC
+ * FRIS); STR and Recovery stay in their honest not-connected state.
  */
 export default function ResultsStage({
   result,
@@ -121,7 +124,8 @@ export default function ResultsStage({
 
       <div className="grid gap-4 md:grid-cols-3">
         {SPECS.map((spec, i) => {
-          const citation = SOURCE_CITATIONS[spec.key];
+          const panel = lookup[spec.key];
+          const citation = panel?.source ?? SOURCE_CITATIONS[spec.key];
           return (
             <div
               key={spec.key}
@@ -133,10 +137,11 @@ export default function ResultsStage({
               <ResultPanel
                 spec={spec}
                 status={statusOf(spec.key)}
-                message={lookup[spec.key]?.message}
+                message={panel?.message}
                 sourceLabel={citation?.label}
                 sourceUrl={citation?.url}
                 lastUpdated={citation?.lastUpdated}
+                disclaimer={panel?.disclaimer}
               />
             </div>
           );

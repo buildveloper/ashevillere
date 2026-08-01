@@ -46,6 +46,7 @@ export default function ResultPanel({
   sourceLabel,
   sourceUrl,
   lastUpdated,
+  disclaimer,
   disclaimerHref = "/methodology",
 }: {
   spec: PanelSpec;
@@ -54,6 +55,7 @@ export default function ResultPanel({
   sourceLabel?: string;
   sourceUrl?: string;
   lastUpdated?: string;
+  disclaimer?: string;
   disclaimerHref?: string;
 }) {
   const accent = ACCENTS[spec.accent];
@@ -99,6 +101,12 @@ export default function ResultPanel({
 
       {status === "result" && message && (
         <p className="text-sm leading-relaxed text-secondary">{message}</p>
+      )}
+
+      {status === "result" && disclaimer && (
+        <p className="rounded-lg border border-dashed border-line bg-paper/60 p-3 text-xs leading-relaxed text-muted">
+          {disclaimer}
+        </p>
       )}
 
       {status !== "result" && status !== "checking" && status !== "not-connected" && (

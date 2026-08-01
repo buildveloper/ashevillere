@@ -6,6 +6,7 @@ describe("classifyZone", () => {
     const r = classifyZone("AE");
     expect(r.status).toBe("result");
     expect(r.zone).toBe("AE");
+    expect(r.inSfha).toBe(true);
     expect(r.message).toContain("high flood risk");
     expect(r.message).toContain("Insurance required");
   });
@@ -13,12 +14,14 @@ describe("classifyZone", () => {
   it("labels AO", () => {
     const r = classifyZone("AO");
     expect(r.zone).toBe("AO");
+    expect(r.inSfha).toBe(true);
     expect(r.message).toContain("shallow flooding");
   });
 
   it("labels X as moderate-to-low", () => {
     const r = classifyZone("X");
     expect(r.zone).toBe("X");
+    expect(r.inSfha).toBe(false);
     expect(r.message).toContain("moderate to low");
   });
 

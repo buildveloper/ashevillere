@@ -21,6 +21,14 @@ export interface LookupPanelResult {
   message?: string;
   /** Machine-readable value, when available. */
   value?: string;
+  /** LOMA/LOMR status for the flood panel. */
+  lomaLomr?: "none" | "loma" | "lomr" | "unknown";
+  /** NC FRIS cross-reference note. */
+  ncNote?: string;
+  /** Source citation — only present when real data was fetched. */
+  source?: { label: string; url: string; lastUpdated: string };
+  /** Required disclaimer for flood data. */
+  disclaimer?: string;
 }
 
 export interface LookupResult {
@@ -56,21 +64,46 @@ async function fetchFlood(ctx: LookupContext): Promise<LookupPanelResult> {
       message?: string;
       value?: string;
       zone?: string;
+      lomaLomr?: "none" | "loma" | "lomr" | "unknown";
+      ncNote?: string;
+      sources?: Array<{ name: string; url: string; lastUpdated: string }>;
     };
     // Only surface a real result when FEMA actually returned a zone.
     if (data.status === "result" && data.zone) {
-      return { key: "flood", status: "result", message: data.message, value: data.zone };
+      return {
+        key: "flood",
+        status: "result",
+        message: data.message,
+        value: data.zone,
+        lomaLomr: data.lomaLomr,
+        ncNote: data.ncNote,
+        source: data.sources?.[0]
+          ? {
+              label: data.sources[0].name,
+              url: data.sources[0].url,
+              lastUpdated: data.sources[0].lastUpdated,
+            }
+          : undefined,
+        disclaimer:
+          "This is informational and not a substitute for an official flood determination, elevation certificate, or insurance agent's assessment.",
+      };
     }
-    // FEMA is a Phase 4 wiring target; until a real zone is fetched, the
-    // panel is honestly "not yet connected", not "checked".
+    // FEMA/NC unreachable or returned nothing — honest unavailable state,
+    // never a silent fallback to fake data.
     return {
       key: "flood",
-      status: "not-connected",
+      status: "unavailable",
       message:
-        "Not yet connected — live Day 6. FEMA flood zone data is being wired to the National Flood Hazard Layer.",
+        data.message ??
+        "FEMA's flood map service is temporarily unreachable. We're not showing guessed data — check the official FEMA map.",
     };
   } catch {
-    return { key: "flood", status: "not-connected", message: "Not yet connected — live Day 6." };
+    return {
+      key: "flood",
+      status: "unavailable",
+      message:
+        "FEMA's flood map service is temporarily unreachable. We're not showing guessed data — check the official FEMA map.",
+    };
   }
 }
 
