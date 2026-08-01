@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/*
+ * AshevilleRE design tokens — sourced from docs/DESIGN.md.
+ * Declared once here as Tailwind theme values; components reference
+ * semantic utilities (bg-paper, text-ink, text-contour, …), never raw hex.
+ */
+@theme {
+  /* Surfaces */
+  --color-paper: #edefe7;
+  --color-card: #f7f8f2;
+
+  /* Ink / type */
+  --color-ink: #17241c;
+  --color-pine: #1e3b2c;
+  --color-pine-2: #2c5240;
+  --color-stone: #6b7268;
+
+  /* Signature + data states */
+  --color-contour: #b8763a;
+  --color-river: #3e7c8c;
+  --color-clay: #8b4a3c;
+  --color-safe: #4f7a5c;
+
+  /* Type faces */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: initial;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-pine);
+  color: var(--color-card);
+}
+
+/* Visible keyboard focus (accessibility floor) */
+:focus-visible {
+  outline: 2px solid var(--color-river);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
