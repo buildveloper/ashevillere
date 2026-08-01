@@ -32,20 +32,31 @@ export default function Hero() {
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (reduced) {
-        gsap.set("[data-hero-rise]", { opacity: 1 });
+        gsap.set("[data-hero-fade]", { opacity: 1 });
         gsap.set("[data-card]", { opacity: 1, y: 0 });
         return;
       }
 
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.fromTo(
-        "[data-hero-rise]",
-        { y: 32, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.9, stagger: 0.12 }
-      ).set("[data-card]", { y: 24, opacity: 0 });
+      // Defer the entrance sequence until after the first paint so the LCP
+      // element (static headline) renders before GSAP does any work.
+      const raf = requestAnimationFrame(() => {
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+        // The headline is never animated (stays painted at opacity 1) — it is
+        // the LCP element, and any transform/opacity on it delays the LCP
+        // metric. The rise/stagger is carried by the eyebrow, subhead, and
+        // search bar instead; the sequence still reads as one orchestrated
+        // entrance while the LCP element paints on the first frame.
+        tl.fromTo(
+          "[data-hero-fade]",
+          { y: 28, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, stagger: 0.1 }
+        ).set("[data-card]", { y: 24, opacity: 0 });
+      });
 
       // Contour draw-in is triggered independently by ContourBackground;
       // hero text lands first so the copy is readable immediately.
+      return () => cancelAnimationFrame(raf);
     },
     { scope: rootRef }
   );
@@ -116,27 +127,24 @@ export default function Hero() {
       <div className="relative z-10 mx-auto w-full max-w-5xl">
         <div className="flex max-w-3xl flex-col gap-6">
           <p
-            data-hero-rise
-            className="font-mono text-xs uppercase tracking-[0.22em] text-stone"
+            data-hero-fade
+            className="font-mono text-xs uppercase tracking-[0.22em] text-stone opacity-0"
           >
             BUNCOMBE COUNTY · NC
           </p>
-          <h1
-            data-hero-rise
-            className="font-display text-5xl font-medium leading-[1.05] text-ink sm:text-6xl lg:text-7xl"
-          >
+          <h1 className="font-display text-5xl font-medium leading-[1.05] text-ink sm:text-6xl lg:text-7xl">
             Know what the land{" "}
             <span className="text-contour">remembers</span> before you buy.
           </h1>
           <p
-            data-hero-rise
-            className="max-w-xl text-lg leading-relaxed text-stone"
+            data-hero-fade
+            className="max-w-xl text-lg leading-relaxed text-stone opacity-0"
           >
             One address. Flood risk, short-term rental eligibility, and
             Hurricane Helene recovery context — drawn from free public records,
             not sales pitches.
           </p>
-          <div data-hero-rise>
+          <div data-hero-fade className="opacity-0">
             <SearchPanel onSearch={handleSearch} />
           </div>
         </div>

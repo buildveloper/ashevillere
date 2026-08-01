@@ -17,21 +17,27 @@ export default function ContourBackground() {
     () => {
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-      const paths = gsap.utils.toArray<SVGPathElement>(
-        svgRef.current?.querySelectorAll("path") ?? []
-      );
+      // Defer until after first paint so the draw-in doesn't compete with
+      // the LCP element's initial render.
+      const raf = requestAnimationFrame(() => {
+        const paths = gsap.utils.toArray<SVGPathElement>(
+          svgRef.current?.querySelectorAll("path") ?? []
+        );
 
-      gsap.fromTo(
-        paths,
-        { strokeDashoffset: (i) => -(i % 2 === 0 ? 2600 : 3200) },
-        {
-          strokeDashoffset: 0,
-          duration: 1.8,
-          ease: "power2.out",
-          stagger: 0.06,
-          delay: 0.15,
-        }
-      );
+        gsap.fromTo(
+          paths,
+          { strokeDashoffset: (i) => -(i % 2 === 0 ? 2600 : 3200) },
+          {
+            strokeDashoffset: 0,
+            duration: 1.8,
+            ease: "power2.out",
+            stagger: 0.06,
+            delay: 0.15,
+          }
+        );
+      });
+
+      return () => cancelAnimationFrame(raf);
     },
     { scope: svgRef }
   );
