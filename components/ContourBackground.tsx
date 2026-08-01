@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { useTheme } from "./ThemeProvider";
 
 /**
  * Topographic contour-line motif — the signature element of the brand.
@@ -12,6 +13,10 @@ import { useGSAP } from "@gsap/react";
  */
 export default function ContourBackground() {
   const svgRef = useRef<SVGSVGElement>(null);
+  const { theme } = useTheme();
+  const dark = theme === "dark";
+  const contour = dark ? "#C89A63" : "#B8763A";
+  const stone = dark ? "#A3ACA2" : "#6B7268";
 
   useGSAP(
     () => {
@@ -53,7 +58,7 @@ export default function ContourBackground() {
       xmlns="http://www.w3.org/2000/svg"
     >
       <g
-        stroke="#B8763A"
+        stroke={contour}
         strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -77,7 +82,7 @@ export default function ContourBackground() {
       <g
         fontFamily="var(--font-plex-mono), ui-monospace, monospace"
         fontSize="11"
-        fill="#6B7268"
+        fill={stone}
         opacity="0.8"
       >
         <text x="300" y="170">2,340′</text>

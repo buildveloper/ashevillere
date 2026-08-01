@@ -2,19 +2,43 @@
 
 /*
  * AshevilleRE design tokens — sourced from docs/DESIGN.md.
- * Declared once here as Tailwind theme values; components reference
- * semantic utilities (bg-paper, text-ink, text-contour, …), never raw hex.
+ * Semantic aliases are the ONLY way components reference color.
+ * Light and dark are both first-class; components never hardcode a mode.
  */
 @theme {
+  /* Type faces */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --ease-ui: cubic-bezier(0.33, 1, 0.68, 1); /* power2.out */
+  --ease-hero: cubic-bezier(0.22, 1, 0.36, 1); /* power3.out */
+  --ease-fly: cubic-bezier(0.16, 1, 0.3, 1); /* expo.out */
+}
+
+/* ---- Light theme (default) ---- */
+:root {
+  color-scheme: light;
+
   /* Surfaces */
   --color-paper: #edefe7;
   --color-card: #f7f8f2;
+  --color-raised: #ffffff;
 
   /* Ink / type */
   --color-ink: #17241c;
   --color-pine: #1e3b2c;
   --color-pine-2: #2c5240;
   --color-stone: #6b7268;
+  --color-muted: #8b938a;
 
   /* Signature + data states */
   --color-contour: #b8763a;
@@ -22,14 +46,61 @@
   --color-clay: #8b4a3c;
   --color-safe: #4f7a5c;
 
-  /* Type faces */
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  /* Lines + overlays */
+  --color-line: rgba(23, 36, 28, 0.12);
+  --color-line-strong: rgba(23, 36, 28, 0.2);
+
+  /* Elevation */
+  --shadow-soft: 0 2px 12px -4px rgba(23, 36, 28, 0.12);
+  --shadow-float: 0 16px 48px -12px rgba(23, 36, 28, 0.22);
+  --shadow-contour-glow: 0 12px 40px -12px rgba(184, 118, 58, 0.35);
+  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-:root {
-  color-scheme: light;
+/* ---- Dark theme ---- */
+.dark {
+  color-scheme: dark;
+
+  --color-paper: #0f1612;
+  --color-card: #16201a;
+  --color-raised: #1d2a22;
+
+  --color-ink: #e8eae3;
+  --color-pine: #3e6b53;
+  --color-pine-2: #4a8065;
+  --color-stone: #a3aca2;
+  --color-muted: #77837a;
+
+  --color-contour: #c89a63;
+  --color-river: #6fa8b8;
+  --color-clay: #c77e6e;
+  --color-safe: #7ba588;
+
+  --color-line: rgba(232, 234, 227, 0.12);
+  --color-line-strong: rgba(232, 234, 227, 0.22);
+
+  --shadow-soft: 0 2px 12px -4px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 16px 48px -12px rgba(0, 0, 0, 0.6);
+  --shadow-contour-glow: 0 12px 40px -12px rgba(200, 154, 99, 0.25);
+  --shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ---- Tailwind semantic utilities ---- */
+@theme inline {
+  --color-canvas: var(--color-paper);
+  --color-surface: var(--color-card);
+  --color-raised: var(--color-raised);
+  --color-ink: var(--color-ink);
+  --color-secondary: var(--color-stone);
+  --color-muted: var(--color-muted);
+  --color-brand: var(--color-pine);
+  --color-brand-hover: var(--color-pine-2);
+  --color-contour: var(--color-contour);
+  --color-river: var(--color-river);
+  --color-clay: var(--color-clay);
+  --color-safe: var(--color-safe);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
 }
 
 html {
@@ -69,6 +140,7 @@ body {
   border-radius: 2px;
 }
 
+/* Reduced motion: everything jumps to end states */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -76,5 +148,6 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,133 +1,108 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import ContourBackground from "./ContourBackground";
 import SearchPanel from "./SearchPanel";
-import ResultCard from "./ResultCard";
+import ResultsStage from "./ResultsStage";
 import type { GeocodeResult } from "@/lib/geocode";
+
+// Lazy-load WebGL terrain so it never blocks first paint.
+const TerrainStage = dynamic(() => import("./TerrainStage"), {
+  ssr: false,
+  loading: () => null,
+});
+
+/** Rebuild a GeocodeResult from shareable URL params. */
+function resultFromParams(
+  lat: string | null,
+  lon: string | null,
+  searchParams: URLSearchParams
+): GeocodeResult | null {
+  if (!lat || !lon) return null;
+  const nLat = Number(lat);
+  const nLon = Number(lon);
+  if (!Number.isFinite(nLat) || !Number.isFinite(nLon)) return null;
+  return {
+    status: "in-scope",
+    matchedAddress: searchParams.get("address") ?? "Address",
+    latitude: nLat,
+    longitude: nLon,
+    zip: searchParams.get("zip") ?? undefined,
+  };
+}
 
 /**
  * Hero — the single "big" motion moment of the site.
- *
- * Load: one orchestrated sequence — contour draw-in runs while the
- * headline, subhead, and search bar rise in staggered. Everything lands
- * by ~2.2s, inside the 2.5s budget.
- *
- * Search: the three result cards stagger up + fade in, each flipping to a
- * simulated lookup state, then settling. This is the product's payoff
- * moment, so it gets the most generous easing.
- *
- * prefers-reduced-motion: everything jumps straight to end states.
+ * Headline paints immediately (LCP); eyebrow, subhead, and search rise
+ * staggered. Terrain fades up behind. On a successful geocode the results
+ * stage appears below and the terrain flies to the property.
  */
 export default function Hero() {
   const rootRef = useRef<HTMLElement>(null);
-  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const animatingRef = useRef(false);
-  const [lastResult, setLastResult] = useState<GeocodeResult | null>(null);
+  const searchParams = useSearchParams();
+
+  // Restore a shared/deep link on first load (lazy init — no effect setState).
+  const [deepResult] = useState<GeocodeResult | null>(() =>
+    resultFromParams(
+      searchParams.get("lat"),
+      searchParams.get("lon"),
+      new URLSearchParams(searchParams.toString())
+    )
+  );
+  const [lastResult, setLastResult] = useState<GeocodeResult | null>(deepResult);
+  const [flyTarget, setFlyTarget] = useState<{ lat: number; lon: number } | null>(
+    deepResult?.latitude && deepResult.longitude
+      ? { lat: deepResult.latitude, lon: deepResult.longitude }
+      : null
+  );
+
+  // Scroll deep-linked results into view after first paint.
+  useEffect(() => {
+    if (!deepResult) return;
+    const id = requestAnimationFrame(() => {
+      document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [deepResult]);
 
   useGSAP(
     () => {
       const reduced =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
       if (reduced) {
         gsap.set("[data-hero-fade]", { opacity: 1 });
-        gsap.set("[data-card]", { opacity: 1, y: 0 });
         return;
       }
-
-      // Defer the entrance sequence until after the first paint so the LCP
-      // element (static headline) renders before GSAP does any work.
       const raf = requestAnimationFrame(() => {
-        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-        // The headline is never animated (stays painted at opacity 1) — it is
-        // the LCP element, and any transform/opacity on it delays the LCP
-        // metric. The rise/stagger is carried by the eyebrow, subhead, and
-        // search bar instead; the sequence still reads as one orchestrated
-        // entrance while the LCP element paints on the first frame.
-        tl.fromTo(
+        gsap.fromTo(
           "[data-hero-fade]",
           { y: 28, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.7, stagger: 0.1 }
-        ).set("[data-card]", { y: 24, opacity: 0 });
+          { y: 0, opacity: 1, duration: 0.7, ease: "power3.out", stagger: 0.1 }
+        );
       });
-
-      // Contour draw-in is triggered independently by ContourBackground;
-      // hero text lands first so the copy is readable immediately.
       return () => cancelAnimationFrame(raf);
     },
     { scope: rootRef }
   );
 
-  const handleInScope = (result: GeocodeResult) => {
-    if (animatingRef.current) return;
-    animatingRef.current = true;
+  const handleInScope = useCallback((result: GeocodeResult) => {
     setLastResult(result);
-
-    const cards = cardsRef.current.filter(Boolean) as HTMLDivElement[];
-
-    // Reset cards to hidden before the reveal.
-    gsap.set(cards, { opacity: 0, y: 24 });
-    cards.forEach((card) => {
-      card.dataset.status = "idle";
-      const statusText = card.querySelector("[data-status-text]");
-      if (statusText) statusText.textContent = "PENDING LOOKUP";
-    });
-
-    // Reduced motion: snap to end state, no timeline.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      cards.forEach((card) => {
-        card.dataset.status = "done";
-        const statusText = card.querySelector("[data-status-text]");
-        if (statusText) statusText.textContent = "CHECKED";
-      });
-      gsap.set(cards, { opacity: 1, y: 0 });
-      animatingRef.current = false;
-      return;
+    if (result.latitude && result.longitude) {
+      setFlyTarget({ lat: result.latitude, lon: result.longitude });
     }
-
-    gsap
-      .timeline()
-      .to(cards, {
-        opacity: 1,
-        y: 0,
-        duration: 0.55,
-        ease: "power2.out",
-        stagger: 0.14,
-      })
-      .to(
-        cards,
-        {
-          y: -6,
-          duration: 0.2,
-          ease: "power1.out",
-          stagger: 0.14,
-        },
-        "-=0.1"
-      )
-      .to(
-        cards,
-        {
-          y: 0,
-          duration: 0.35,
-          ease: "power3.out",
-          stagger: 0.14,
-        },
-        "<"
-      )
-      .call(() => {
-        cards.forEach((card) => {
-          card.dataset.status = "done";
-          const statusText = card.querySelector("[data-status-text]");
-          if (statusText) statusText.textContent = "CHECKED";
-        });
-        animatingRef.current = false;
-      });
-  };
+    // Shareable URL state (back-button safe).
+    const params = new URLSearchParams();
+    params.set("address", result.matchedAddress ?? "");
+    if (result.latitude) params.set("lat", result.latitude.toFixed(5));
+    if (result.longitude) params.set("lon", result.longitude.toFixed(5));
+    if (result.zip) params.set("zip", result.zip);
+    window.history.replaceState(null, "", `/?${params.toString()}`);
+  }, []);
 
   return (
     <section
@@ -135,11 +110,12 @@ export default function Hero() {
       className="relative flex min-h-screen flex-col justify-center overflow-hidden px-6 pb-24 pt-28"
     >
       <ContourBackground />
-      <div className="relative z-10 mx-auto w-full max-w-5xl">
+      <TerrainStage target={flyTarget} />
+      <div className="relative z-10 mx-auto w-full max-w-6xl">
         <div className="flex max-w-3xl flex-col gap-6">
           <p
             data-hero-fade
-            className="font-mono text-xs uppercase tracking-[0.22em] text-stone opacity-0"
+            className="font-mono text-xs uppercase tracking-[0.22em] text-secondary opacity-0"
           >
             BUNCOMBE COUNTY · NC
           </p>
@@ -149,42 +125,22 @@ export default function Hero() {
           </h1>
           <p
             data-hero-fade
-            className="max-w-xl text-lg leading-relaxed text-stone opacity-0"
+            className="max-w-xl text-lg leading-relaxed text-secondary opacity-0"
           >
-            One address. Flood risk, short-term rental eligibility, and
-            Hurricane Helene recovery context — drawn from free public records,
-            not sales pitches.
+            One address. Flood risk, short-term rental eligibility, and Hurricane
+            Helene recovery context — drawn from free public records, not sales
+            pitches.
           </p>
-          <div data-hero-fade className="opacity-0">
+          <div data-hero-fade className="opacity-0" id="lookup">
             <SearchPanel onInScope={handleInScope} />
           </div>
         </div>
 
         {lastResult && (
-          <p
-            data-lookup-confirm
-            className="mt-8 max-w-3xl font-mono text-[11px] leading-relaxed text-stone"
-          >
-            GECODED → {lastResult.matchedAddress ?? "matched"} ·{" "}
-            {lastResult.latitude?.toFixed(5)}, {lastResult.longitude?.toFixed(5)} ·{" "}
-            ZIP {lastResult.zip}
-          </p>
+          <div id="results" className="mt-16 scroll-mt-24">
+            <ResultsStage result={lastResult} />
+          </div>
         )}
-
-        <div className="mt-14 grid gap-4 sm:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              ref={(el) => {
-                cardsRef.current[i] = el;
-              }}
-              data-card
-              className="opacity-0"
-            >
-              <ResultCard index={i} className="h-full" />
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
