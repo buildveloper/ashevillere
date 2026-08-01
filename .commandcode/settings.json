@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(git:*)",
+      "Shell(git rm -r src public data -p -q && git rm -q -p 2>/dev/null; git status --short)",
+      "Shell(rmdir:*)",
+      "Shell(rm:*)",
+      "Shell(dir:*)",
+      "Shell(cmd:*)",
+      "powershell"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}
