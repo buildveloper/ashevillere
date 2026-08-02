@@ -73,9 +73,13 @@ export default function ResultsStage({
     let cancelled = false;
 
     const run = async () => {
-      const res = await fetch(
-        `/api/lookup?lat=${result.latitude!.toFixed(5)}&lon=${result.longitude!.toFixed(5)}&zip=${result.zip ?? ""}`
-      );
+      const params = new URLSearchParams({
+        lat: result.latitude!.toFixed(5),
+        lon: result.longitude!.toFixed(5),
+      });
+      if (result.zip) params.set("zip", result.zip);
+      if (result.matchedAddress) params.set("address", result.matchedAddress);
+      const res = await fetch(`/api/lookup?${params.toString()}`);
       if (cancelled) return;
       const data = (await res.json()) as LookupResult;
       if (cancelled) return;

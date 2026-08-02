@@ -12,7 +12,13 @@ export async function GET(req: NextRequest) {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
     return NextResponse.json({ error: "Missing lat/lon." }, { status: 400 });
   }
-  const ctx: LookupContext = { latitude: lat, longitude: lon, zip, city };
+  const ctx: LookupContext = {
+    latitude: lat,
+    longitude: lon,
+    zip: req.nextUrl.searchParams.get("zip") ?? undefined,
+    city: req.nextUrl.searchParams.get("city") ?? undefined,
+    address: req.nextUrl.searchParams.get("address") ?? undefined,
+  };
   const result = await runLookup(ctx);
   return NextResponse.json(result);
 }

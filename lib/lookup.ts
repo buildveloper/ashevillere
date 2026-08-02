@@ -15,6 +15,8 @@ export interface LookupContext {
   longitude: number;
   zip?: string;
   city?: string;
+  /** Canonical matched address from the geocoder (e.g. "2 ROBERTS ST, ASHEVILLE, NC, 28801"). */
+  address?: string;
 }
 
 export type PanelStatus = "checking" | "result" | "not-connected" | "unavailable" | "error";
@@ -137,7 +139,8 @@ async function runRecovery(ctx: LookupContext): Promise<LookupPanelResult> {
   try {
     const r: RecoveryResult = await lookupRecoveryContext(
       ctx.latitude,
-      ctx.longitude
+      ctx.longitude,
+      ctx.address
     );
     if (r.status === "result" && r.value) {
       return {
