@@ -30,6 +30,10 @@ export interface LookupPanelResult {
   lomaLomr?: "none" | "loma" | "lomr" | "unknown";
   /** NC FRIS cross-reference note. */
   ncNote?: string;
+  /** Recovery damage classification. */
+  recoveryValue?: "damage-reported" | "no-damage-record";
+  /** Damage type from the county record. */
+  damageType?: string;
   /** Source citation — only present when real data was fetched. */
   source?: { label: string; url: string; lastUpdated: string };
   /** Required disclaimer for flood data. */
@@ -47,7 +51,7 @@ export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
   const [flood, str, recovery] = await Promise.all([
     runFlood(ctx),
     runStr(ctx),
-    runRecovery(),
+    runRecovery(ctx),
   ]);
   return { flood, str, recovery };
 }
@@ -128,16 +132,44 @@ async function runStr(ctx: LookupContext): Promise<LookupPanelResult> {
   }
 }
 
-/** Recovery panel: still not-connected (Phase 6). */
-async function runRecovery(): Promise<LookupPanelResult> {
-  const r: RecoveryResult = await lookupRecoveryContext();
-  if (r.status === "result") {
-    return { key: "recovery", status: "not-connected", message: r.message };
+/** Recovery panel: call the recovery module directly (in-process, parallel). */
+async function runRecovery(ctx: LookupContext): Promise<LookupPanelResult> {
+  try {
+    const r: RecoveryResult = await lookupRecoveryContext(
+      ctx.latitude,
+      ctx.longitude
+    );
+    if (r.status === "result" && r.value) {
+      return {
+        key: "recovery",
+        status: "result",
+        message: r.message,
+        value: r.value,
+        recoveryValue: r.value,
+        damageType: r.damageType,
+        source: r.sources?.[0]
+          ? {
+              label: r.sources[0].name,
+              url: r.sources[0].url,
+              lastUpdated: r.sources[0].lastUpdated,
+            }
+          : undefined,
+        disclaimer: r.disclaimer,
+      };
+    }
+    return {
+      key: "recovery",
+      status: "unavailable",
+      message:
+        r.message ??
+        "Buncombe County's Helene damage records are temporarily unreachable. We're not showing guessed data — check the county's open data portal.",
+    };
+  } catch {
+    return {
+      key: "recovery",
+      status: "unavailable",
+      message:
+        "Buncombe County's Helene damage records are temporarily unreachable. We're not showing guessed data — check the county's open data portal.",
+    };
   }
-  return {
-    key: "recovery",
-    status: "not-connected",
-    message:
-      "Not yet connected — live Day 6. Helene recovery and damage context are being wired to county/state data.",
-  };
 }

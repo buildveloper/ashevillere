@@ -29,6 +29,13 @@ const SOURCES = [
     role: "Zoning districts and parcel data. STR eligibility depends on whether a property is inside Asheville city limits (2018 ordinance) or county jurisdiction.",
   },
   {
+    name: "Buncombe County open data — Helene damage parcels",
+    org: "Buncombe County, NC",
+    url: "https://data.buncombenc.gov/",
+    updated: "County-maintained",
+    role: "County-published per-parcel records of reported Hurricane Helene damage (Accela table). The tool checks whether a parcel appears in this dataset; it also notes when post-Helene county aerial imagery is available. It is not an official damage determination.",
+  },
+  {
     name: "NC Department of Public Safety",
     org: "State of North Carolina",
     url: "https://www.ncdps.gov",
@@ -98,8 +105,11 @@ export default function MethodologyPage() {
         </li>
         <li>
           <span className="font-mono text-[11px] text-contour">04</span> — Recovery
-          context comes from state/county program listings; per-address storm
-          damage records are not public data and are never fabricated.
+          checks the county&apos;s Helene damage parcels dataset for the parcel. If
+          it has no record, that&apos;s stated as-is — the dataset reflects records
+          reported to the county, not a guarantee. Per-address building-permit
+          records are not published as a public queryable API, so permit
+          activity is never invented.
         </li>
       </ul>
 

@@ -10,6 +10,6 @@ export async function GET(req: NextRequest) {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
     return NextResponse.json({ error: "Missing lat/lon." }, { status: 400 });
   }
-  const result = await lookupRecoveryContext();
+  const result = await lookupRecoveryContext(lat, lon);
   return NextResponse.json(result);
 }

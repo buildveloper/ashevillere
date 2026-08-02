@@ -30,6 +30,7 @@ const SPECS: PanelSpec[] = [
     title: "Helene recovery",
     detail: "Post-storm recovery context",
     accent: "clay",
+    officialSourceUrl: "https://data.buncombenc.gov/",
   },
 ];
 
