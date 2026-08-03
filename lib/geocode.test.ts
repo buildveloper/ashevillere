@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { classifyCensusResponse, isBuncombeZip } from "./geocode";
-
 const ashevilleMatch = {
   coordinates: { x: -82.55174903506, y: 35.595180337928 },
   addressComponents: {
@@ -60,5 +59,23 @@ describe("classifyCensusResponse", () => {
   it("classifies an empty match list as no-match", () => {
     const result = classifyCensusResponse({ result: { addressMatches: [] } });
     expect(result.status).toBe("no-match");
+  });
+
+  it("keeps a Buncombe address in-scope even without a city component", () => {
+    // Census returns the canonical form; the classifier must keep an in-scope
+    // Buncombe ZIP even when the user's bare query lacked a city.
+    const result = classifyCensusResponse({
+      result: {
+        addressMatches: [
+          {
+            coordinates: { x: -82.42946, y: 35.60318 },
+            addressComponents: { zip: "28778", state: "NC" },
+            matchedAddress: "287 NEW SALEM RD, SWANNANOA, NC, 28778",
+          },
+        ],
+      },
+    });
+    expect(result.status).toBe("in-scope");
+    expect(result.zip).toBe("28778");
   });
 });

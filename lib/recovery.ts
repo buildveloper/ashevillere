@@ -20,12 +20,13 @@
  *     county uses to connect addresses to permits/damage records.
  *   Table Accela/MapServer/7 (bun.opendata.HeleneDamageParcelsForPermits) —
  *     county-published per-parcel damage records (fields: pin, DamageType).
- *   Layer bcmap_vt/MapServer/0 (Property) — fallback parcel lookup via a small
- *     envelope query when no address string is available; the county's parcel
- *     polygons do not reliably contain street-centerline-geocoded points, so
- *     point-in-polygon is not used for this layer.
  *   ImageServer Images_2024_posthelene — post-Helene county aerial imagery
  *     (availability signal only; we do not render image tiles).
+ *
+ * Parcel matching is address-only (no spatial/nearest-parcel fallback): a
+ * street-centerline geocode point is not reliably inside a parcel polygon, and
+ * silently checking a neighbor's parcel would be worse than an honest
+ * unavailable.
  *
  * Honest limits (stated plainly, never filled in):
  *   - Buncombe County does not publish a queryable public API of per-address
@@ -57,7 +58,6 @@ const BUNCOMBE_ROOT =
 
 const ACCELA_ADDRESS_TABLE = `${BUNCOMBE_ROOT}/Accela/MapServer/4`;
 const ACCELA_DAMAGE_TABLE = `${BUNCOMBE_ROOT}/Accela/MapServer/7`;
-const PROPERTY_LAYER = `${BUNCOMBE_ROOT}/bcmap_vt/MapServer/0`;
 const POST_HELENE_IMAGERY =
   `${BUNCOMBE_ROOT}/Images_2024_posthelene/ImageServer`;
 
@@ -116,6 +116,12 @@ function sqlStr(value: string): string {
  * table (FullAddress → ParcelNumber). The matched address is the Census
  * canonical form ("2 ROBERTS ST, ASHEVILLE, NC, 28801"); we try exact match
  * first, then a normalized street-name + house-number fallback.
+ *
+ * If the address is not in the county's table, returns null — the caller
+ * reports an honest unavailable. We deliberately do NOT fall back to a
+ * spatial/nearest-parcel lookup: a street-centerline geocode point often
+ * falls on a road right-of-way between parcels, and picking a neighbor's
+ * parcel would silently check the wrong property's damage record.
  */
 async function parcelByAddress(
   matchedAddress: string
@@ -150,50 +156,6 @@ async function parcelByAddress(
         sourceUrl: "https://gis.buncombecounty.org",
       };
     }
-  }
-  return null;
-}
-
-/**
- * Fallback parcel lookup: a small envelope query around the point on the
- * Property layer, returning the nearest parcel with a house number. The
- * county's parcel polygons do not reliably contain street-centerline-geocoded
- * points, so we pick the closest addressable parcel.
- */
-async function parcelByPoint(
-  lat: number,
-  lon: number
-): Promise<{ pinnum: string; sourceName: string; sourceUrl: string } | null> {
-  // ~150m box around the point (0.0015 deg lat ≈ 165m; lon scaled by cos).
-  const dLat = 0.0015;
-  const dLon = 0.0015 / Math.max(0.3, Math.cos((lat * Math.PI) / 180));
-  const url = new URL(`${PROPERTY_LAYER}/query`);
-  url.searchParams.set(
-    "geometry",
-    `${(lon - dLon).toFixed(6)},${(lat - dLat).toFixed(6)},${(lon + dLon).toFixed(6)},${(lat + dLat).toFixed(6)}`
-  );
-  url.searchParams.set("geometryType", "esriGeometryEnvelope");
-  url.searchParams.set("inSR", "4326");
-  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
-  url.searchParams.set("where", "1=1");
-  url.searchParams.set("outFields", "pinnum,pin,HouseNumber,streetname");
-  url.searchParams.set("returnGeometry", "false");
-  url.searchParams.set("f", "json");
-  const data = await query(url.toString());
-  const features = data?.features ?? [];
-  // Prefer a parcel with a real house number closest to the point (envelope
-  // results are unordered, so pick the first addressable one).
-  const withNumber = features.find(
-    (f) => f.attributes?.HouseNumber && f.attributes.HouseNumber !== "99999"
-  );
-  const attrs = (withNumber ?? features[0])?.attributes;
-  const pinnum = attrs ? String(attrs.pinnum ?? attrs.pin ?? "").trim() : "";
-  if (pinnum) {
-    return {
-      pinnum,
-      sourceName: "Buncombe Co. GIS (Property)",
-      sourceUrl: "https://gis.buncombecounty.org",
-    };
   }
   return null;
 }
@@ -315,21 +277,20 @@ export async function lookupRecoveryContext(
   lon: number,
   matchedAddress?: string
 ): Promise<RecoveryResult> {
-  // 1) Resolve the parcel PIN — by address when available (the county's own
-  //    address→parcel link table), else by a small envelope around the point.
+  // 1) Resolve the parcel PIN via the county's own address→parcel link table.
+  //    Without a matched address there is no trustworthy parcel match (a
+  //    street-centerline geocode point is not reliably inside a parcel), so
+  //    we report an honest unavailable rather than guess a neighbor's parcel.
   let parcel: { pinnum: string; sourceName: string; sourceUrl: string } | null =
     null;
   if (matchedAddress) {
     parcel = await parcelByAddress(matchedAddress);
   }
   if (!parcel) {
-    parcel = await parcelByPoint(lat, lon);
-  }
-  if (!parcel) {
     return {
       status: "unavailable",
       message:
-        "Buncombe County's parcel service is temporarily unreachable. We're not showing guessed data — check the county's open data portal for Helene damage records.",
+        "We couldn't match this address to a Buncombe County parcel record, so we can't check Helene damage records for it. Verify with Buncombe County's open data portal.",
     };
   }
 
