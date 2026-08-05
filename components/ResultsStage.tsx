@@ -92,28 +92,21 @@ export default function ResultsStage({
     };
   }, [result]);
 
-  // Stagger the panels in.
+  // Stagger the panels in — but only for cards below the fold at mount.
+  // Cards visible at load stay visible (no opacity flip) so the deep-link
+  // results never shift layout after first paint (CLS guard).
   useGSAP(
     () => {
       const cards = panelsRef.current.filter(Boolean) as HTMLDivElement[];
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        gsap.set(cards, { opacity: 1, y: 0 });
-        return;
-      }
-      // CLS guard: if the cards are already in/near the viewport at mount
-      // (e.g. deep-link results), don't hide and animate them — that would
-      // move content after first paint. Only animate below-fold cards.
-      const inView = cards.some(
-        (c) => c.getBoundingClientRect().top < window.innerHeight * 0.85
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const belowFold = cards.filter(
+        (c) => c.getBoundingClientRect().top >= window.innerHeight * 0.85
       );
-      if (inView) {
-        gsap.set(cards, { opacity: 1, y: 0 });
-        return;
-      }
+      if (!belowFold.length) return;
       gsap.fromTo(
-        cards,
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", stagger: 0.14 }
+        belowFold,
+        { y: 24 },
+        { y: 0, duration: 0.55, ease: "power2.out", stagger: 0.14 }
       );
     },
     { scope: rootRef, dependencies: [result] }
@@ -149,7 +142,7 @@ export default function ResultsStage({
               ref={(el) => {
                 panelsRef.current[i] = el;
               }}
-              className="opacity-0"
+              className=""
             >
               <ResultPanel
                 spec={spec}
