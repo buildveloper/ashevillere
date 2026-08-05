@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 import type { GeocodeResult } from "@/lib/geocode";
 import type { LookupResult, PanelStatus } from "@/lib/lookup";
 import ResultPanel, { type PanelSpec } from "./ResultPanel";
@@ -65,7 +63,6 @@ export default function ResultsStage({
 }) {
   const [lookup, setLookup] = useState<LookupResult>(INITIAL);
   const rootRef = useRef<HTMLDivElement>(null);
-  const panelsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   // Kick off the three checks when the geocode result arrives.
   useEffect(() => {
@@ -92,26 +89,6 @@ export default function ResultsStage({
     };
   }, [result]);
 
-  // Stagger the panels in — but only for cards below the fold at mount.
-  // Cards visible at load stay visible (no opacity flip) so the deep-link
-  // results never shift layout after first paint (CLS guard).
-  useGSAP(
-    () => {
-      const cards = panelsRef.current.filter(Boolean) as HTMLDivElement[];
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      const belowFold = cards.filter(
-        (c) => c.getBoundingClientRect().top >= window.innerHeight * 0.85
-      );
-      if (!belowFold.length) return;
-      gsap.fromTo(
-        belowFold,
-        { y: 24 },
-        { y: 0, duration: 0.55, ease: "power2.out", stagger: 0.14 }
-      );
-    },
-    { scope: rootRef, dependencies: [result] }
-  );
-
   const statusOf = (key: "flood" | "str" | "recovery"): PanelStatus =>
     lookup[key]?.status ?? "checking";
 
@@ -133,17 +110,11 @@ export default function ResultsStage({
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {SPECS.map((spec, i) => {
+        {SPECS.map((spec) => {
           const panel = lookup[spec.key];
           const citation = panel?.source ?? SOURCE_CITATIONS[spec.key];
           return (
-            <div
-              key={spec.key}
-              ref={(el) => {
-                panelsRef.current[i] = el;
-              }}
-              className=""
-            >
+            <div key={spec.key}>
               <ResultPanel
                 spec={spec}
                 status={statusOf(spec.key)}
