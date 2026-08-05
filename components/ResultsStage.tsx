@@ -100,6 +100,16 @@ export default function ResultsStage({
         gsap.set(cards, { opacity: 1, y: 0 });
         return;
       }
+      // CLS guard: if the cards are already in/near the viewport at mount
+      // (e.g. deep-link results), don't hide and animate them — that would
+      // move content after first paint. Only animate below-fold cards.
+      const inView = cards.some(
+        (c) => c.getBoundingClientRect().top < window.innerHeight * 0.85
+      );
+      if (inView) {
+        gsap.set(cards, { opacity: 1, y: 0 });
+        return;
+      }
       gsap.fromTo(
         cards,
         { opacity: 0, y: 24 },

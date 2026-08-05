@@ -26,8 +26,7 @@ import { useTheme } from "./ThemeProvider";
  * License for production real-estate use, so this product stays token-free.
  */
 
-// OpenFreeMap vector source (no key) + Mapterhorn global DEM (no key).
-const VECTOR_URL = "https://tiles.openfreemap.org/planet";
+// OpenFreeMap vector tiles (no key) + Mapterhorn global DEM (no key).
 // Free, no-key Terrarium DEM — the same source the official MapLibre
 // 3D-terrain example uses. 512px tiles, global coverage.
 const DEM_URL = "https://tiles.mapterhorn.com/tilejson.json";
@@ -40,7 +39,11 @@ function buildStyle(dark: boolean): StyleSpecification {
     sources: {
       openmaptiles: {
         type: "vector",
-        url: VECTOR_URL,
+        // Explicit tile URLs (not `url:` TileJSON) — OpenFreeMap's TileJSON
+        // endpoint rejects MapLibre's CORS preflight (405), but the stable
+        // tile path serves MVT directly with no preflight.
+        tiles: ["https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf"],
+        maxzoom: 14,
         attribution:
           '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       },
