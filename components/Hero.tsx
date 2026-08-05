@@ -15,12 +15,6 @@ const TerrainStage = dynamic(() => import("./TerrainStage"), {
   ssr: false,
   loading: () => null,
 });
-// Lazy-load the real 3D map (MapLibre) — mounted ONLY after a successful
-// in-scope geocode so the homepage hero's LCP is never affected by it.
-const MapStage = dynamic(() => import("./MapStage"), {
-  ssr: false,
-  loading: () => null,
-});
 
 /** Rebuild a GeocodeResult from shareable URL params. */
 function resultFromParams(
@@ -60,11 +54,6 @@ export default function Hero() {
     )
   );
   const [lastResult, setLastResult] = useState<GeocodeResult | null>(deepResult);
-  const [flyTarget, setFlyTarget] = useState<{ lat: number; lon: number } | null>(
-    deepResult?.latitude && deepResult.longitude
-      ? { lat: deepResult.latitude, lon: deepResult.longitude }
-      : null
-  );
 
   // Scroll deep-linked results into view after first paint.
   useEffect(() => {
@@ -98,9 +87,6 @@ export default function Hero() {
 
   const handleInScope = useCallback((result: GeocodeResult) => {
     setLastResult(result);
-    if (result.latitude && result.longitude) {
-      setFlyTarget({ lat: result.latitude, lon: result.longitude });
-    }
     // Shareable URL state (back-button safe).
     const params = new URLSearchParams();
     params.set("address", result.matchedAddress ?? "");
@@ -116,16 +102,7 @@ export default function Hero() {
       className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-6 pb-24 pt-28"
     >
       <ContourBackground />
-      <TerrainStage target={flyTarget} />
-      {/* The real 3D map exists only after a successful lookup — never on
-          initial load. Rendered below the hero copy, above the results. The
-          slot is reserved (fixed 420px, matching the map) so the page below
-          doesn't shift when the lazy map chunk mounts (CLS guard). */}
-      {flyTarget && (
-        <div className="relative z-10 mx-auto mb-16 h-[420px] w-full max-w-6xl">
-          <MapStage target={flyTarget} className="absolute inset-0" />
-        </div>
-      )}
+      <TerrainStage />
       <div className="relative z-10 mx-auto w-full max-w-6xl">
         <div className="flex max-w-3xl flex-col gap-6">
           <p
