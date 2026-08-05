@@ -89,7 +89,13 @@
       "Shell(npx lighthouse http://localhost:3000 --chrome-path=C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe --output=json --output-path=%COMMANDCODE_SCRATCHPAD%lh-report5.json --quiet --only-categories=performance --chrome-flags=--headless=new --disable-gpu --no-sandbox)",
       "Shell(node -e \"const r=require(process.env.COMMANDCODE_SCRATCHPAD+'/lh-report5.json'); const a=r.audits; const get=v=>a[v]&&a[v].displayValue||'n/a'; console.log('PERF:', r.categories.performance.score); console.log('LCP:', get('largest-contentful-paint')); console.log('CLS:', get('cumulative-layout-shift')); console.log('TBT:', get('total-blocking-time')); const l=a['lcp-breakdown-insight']; if(l&&l.details){l.details.items.forEach(i=>{if(i.duration!==undefined) console.log(i.label, i.duration+'ms');});}\")",
       "Shell(node -e \"const r=require(process.env.COMMANDCODE_SCRATCHPAD+'/lh-report5.json'); const a=r.audits; const net=a['network-requests']; if(net&&net.details){const js=net.details.items.filter(i=>i.resourceType==='Script').map(i=>({n:i.url.split('/_next/')[1]||'main', kb:Math.round(i.transferSize/1024), t:i.networkEndTime-i.networkRequestTime})); js.forEach(i=>console.log(i.kb+'KB', i.n, i.t+'ms'));}\")",
-      "Shell(node -e \"const r=require(process.env.COMMANDCODE_SCRATCHPAD+'/lh-report5.json'); const a=r.audits; const mw=a['mainthread-work-breakdown']; mw.details.items.forEach(i=>console.log(i.group, Math.round(i.duration)+'ms')); const t=a['bootup-time']; t.details.items.forEach(i=>console.log('script:', (i.url.split('/').pop()||'main').slice(0,40), Math.round(i.scripting)+'ms'));\")"
+      "Shell(node -e \"const r=require(process.env.COMMANDCODE_SCRATCHPAD+'/lh-report5.json'); const a=r.audits; const mw=a['mainthread-work-breakdown']; mw.details.items.forEach(i=>console.log(i.group, Math.round(i.duration)+'ms')); const t=a['bootup-time']; t.details.items.forEach(i=>console.log('script:', (i.url.split('/').pop()||'main').slice(0,40), Math.round(i.scripting)+'ms'));\")",
+      "Shell(curl -s https://api.github.com/repos/buildveloper/ashevillere/deployments?per_page=3)",
+      "Shell(node -e const d=JSON.parse(require('fs').readFileSync(0,'utf8')); const p=d.find(x=>x.environment==='Preview'); console.log(p.id);)",
+      "Shell(curl -s https://api.github.com/repos/buildveloper/ashevillere/deployments/5704885916/statuses)",
+      "Shell(node -e const d=JSON.parse(require('fs').readFileSync(0,'utf8')); d.forEach(s=>console.log(s.state, '|', s.environment_url||'(no url)'));)",
+      "Shell(curl -s https://ashevillere.com -o %TEMP%prod-final.html)",
+      "Shell(node -e const fs=require('fs'); const html=fs.readFileSync(process.env.TEMP+'\\prod-final.html','utf8'); console.log(html.slice(0,120));)"
     ],
     "deny": [],
     "defaultMode": "default"

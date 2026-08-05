@@ -65,6 +65,7 @@ All of the following are public government data with no cost and no MLS/licensin
 - **State flood data:** NC Flood Risk Information System — fris.nc.gov — and the NC Floodplain Mapping Program's open data hub, which exposes GeoServices/WMS/WFS API access and direct downloads (CSV/GeoJSON/etc).
 - **Parcels and zoning:** Buncombe County's parcel dataset is published on ArcGIS Hub (search "Buncombe County Parcels"), and mirrored on the City of Asheville's own open data portal on the same ArcGIS Hub platform — check that portal specifically for a zoning-districts layer. Buncombe County's own GIS site (gis.buncombenc.gov, data.buncombecounty.org) is the canonical source if the hub datasets are incomplete.
 - **Market stats for context/content:** Land of the Sky Association of REALTORS (lotsar.org) publishes market data and press releases — not an API, but useful for the content layer.
+- **Map renderer (not a data source, but part of the free stack):** MapLibre GL JS (MIT, no API key) over OpenFreeMap's public instance (tiles.openfreemap.org) — free, no usage limits, commercial use allowed. Mapbox's free tier (50k map loads/mo) requires a paid Commercial Application License for production real-estate use, so it's not used here.
 
 Treat all of the above as a starting point, not gospel — verify each endpoint is live, inspect its actual schema, and handle the case where a lookup returns nothing gracefully (e.g. address outside Buncombe County, or a layer temporarily unavailable).
 

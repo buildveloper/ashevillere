@@ -15,6 +15,12 @@ const TerrainStage = dynamic(() => import("./TerrainStage"), {
   ssr: false,
   loading: () => null,
 });
+// Lazy-load the real 3D map (MapLibre) — mounted ONLY after a successful
+// in-scope geocode so the homepage hero's LCP is never affected by it.
+const MapStage = dynamic(() => import("./MapStage"), {
+  ssr: false,
+  loading: () => null,
+});
 
 /** Rebuild a GeocodeResult from shareable URL params. */
 function resultFromParams(
@@ -111,6 +117,13 @@ export default function Hero() {
     >
       <ContourBackground />
       <TerrainStage target={flyTarget} />
+      {/* The real 3D map exists only after a successful lookup — never on
+          initial load. Rendered below the hero copy, above the results. */}
+      {flyTarget && (
+        <div className="relative z-10 mx-auto mb-16 w-full max-w-6xl">
+          <MapStage target={flyTarget} />
+        </div>
+      )}
       <div className="relative z-10 mx-auto w-full max-w-6xl">
         <div className="flex max-w-3xl flex-col gap-6">
           <p

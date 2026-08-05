@@ -15,8 +15,9 @@ terracotta, and (2) near-black + single neon accent. Neither fits a tool whose
 entire pitch is "grounded and sourced."
 
 Everything below costs nothing beyond free tools. No paid dependencies, no API
-keys, no Mapbox. Real terrain runs on Three.js (MIT) over elevation data baked
-from USGS 3DEP public domain rasters.
+keys, no Mapbox. The hero terrain runs on Three.js (MIT) over elevation data
+baked from USGS 3DEP public domain rasters; the post-lookup 3D map runs on
+MapLibre GL JS (MIT, token-free) over OpenFreeMap tiles.
 
 ## Identity — "Topographic truth"
 
@@ -97,13 +98,20 @@ never decorative. `--river` is informational, not a risk signal.
 
 ## 3D — Terrain stage
 
-- **Stack:** Three.js + React Three Fiber + Drei (MIT, no keys, no Mapbox).
+- **Stack:** Three.js + React Three Fiber + Drei (MIT) for the ambient hero
+  backdrop; MapLibre GL JS (MIT, no keys) for the post-lookup map stage, over
+  OpenFreeMap's free public tiles (no API key, no usage limits).
 - **Data:** Buncombe County elevation baked once from USGS 3DEP 1/3 arc-second DEM
   into `public/terrain/buncombe-heightmap.png` (256×256, 16-bit PNG) + bounds in
-  `lib/terrain.ts`. No runtime fetching.
-- **Behavior:** ambient hero backdrop with slow camera drift and mouse parallax;
+  `lib/terrain.ts`. No runtime fetching for the hero.
+- **Hero behavior:** ambient backdrop with slow camera drift and mouse parallax;
   on a successful geocode the camera flies to the coordinate (expo-out, ~1.2s) and
   a pin drops. Colors read from theme tokens as shader uniforms.
+- **Map stage behavior:** after a geocode, a lazy-loaded MapLibre map mounts with
+  real 3D terrain (OpenFreeMap DEM + `setTerrain`) and OSM building extrusion, and
+  flies to the parcel (expo-out, ~1.2s, restrained pitch) — atmosphere, not
+  spectacle. It is mounted only after the lookup succeeds, so the hero LCP is
+  never affected until a search happens.
 - **Performance:** `next/dynamic` + `ssr:false` so the WebGL bundle never blocks
   LCP; `dpr` capped 1.5–2; mesh simplified on mobile; render loop pauses when the
   stage is offscreen (IntersectionObserver) and when idle.
