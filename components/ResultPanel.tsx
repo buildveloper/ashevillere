@@ -68,7 +68,7 @@ export default function ResultPanel({
 
   return (
     <div
-      className={`flex min-h-[280px] flex-col gap-3 rounded-xl border bg-surface p-6 ${accent.border} shadow-soft`}
+      className={`flex min-h-[320px] flex-col gap-3 rounded-xl border bg-surface p-6 ${accent.border} shadow-soft`}
     >
       <div className="flex items-center justify-between">
         <span className={`font-mono text-[11px] tracking-[0.18em] ${accent.text} uppercase`}>
