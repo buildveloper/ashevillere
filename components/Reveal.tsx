@@ -27,6 +27,11 @@ export default function Reveal({
       const el = ref.current;
       if (!el) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      // CLS guard: if the element is already inside (or near) the viewport at
+      // load, don't hide it and animate it — that would move content after
+      // first paint and cause a layout shift. Only below-fold content gets
+      // the reveal.
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.85) return;
       gsap.fromTo(
         el,
         { opacity: 0, y: 24 },
