@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { validateLead } from "./lead";
 
 describe("validateLead", () => {
@@ -50,5 +50,53 @@ describe("validateLead", () => {
     });
     expect(v.ok && v.payload.address?.length).toBe(200);
     expect(v.ok && v.payload.message?.length).toBe(1000);
+  });
+});
+
+describe("submitLead", () => {
+  const OLD_ENV = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...OLD_ENV };
+  });
+
+  afterEach(() => {
+    process.env = OLD_ENV;
+    vi.unstubAllGlobals();
+  });
+
+  it("only reports success when the relay body says success", async () => {
+    process.env.FORMSUBMIT_EMAIL = "chris@ashevillere.com";
+    const fetchMock = vi.fn(async () => {
+      return {
+        ok: true,
+        json: async () => ({ success: "false", message: "This form needs Activation." }),
+      } as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { submitLead } = await import("./lead");
+    const ok = await submitLead({ email: "buyer@example.com", address: "1 N Pack Sq" });
+
+    expect(ok).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.headers).toMatchObject({
+      Origin: "https://ashevillere.com",
+      Referer: "https://ashevillere.com/",
+    });
+  });
+
+  it("returns false when FORMSUBMIT_EMAIL is not configured", async () => {
+    delete process.env.FORMSUBMIT_EMAIL;
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { submitLead } = await import("./lead");
+    const ok = await submitLead({ email: "buyer@example.com" });
+
+    expect(ok).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

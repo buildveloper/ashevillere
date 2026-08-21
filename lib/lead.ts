@@ -64,9 +64,10 @@ export function validateLead(input: unknown): LeadValidation {
 }
 
 /**
- * Forward a lead to the FormSubmit AJAX endpoint. Returns true only on a
- * 2xx response from the relay. A missing FORMSUBMIT_EMAIL or a failed
- * request returns false — never a fake success.
+ * Forward a lead to the FormSubmit AJAX endpoint. Returns true only when the
+ * relay explicitly reports success. A missing FORMSUBMIT_EMAIL, a failed
+ * request, or a relay that reports `success:false` (e.g. inbox not yet
+ * activated) returns false — never a fake success.
  */
 export async function submitLead(payload: LeadPayload): Promise<boolean> {
   const inbox = process.env.FORMSUBMIT_EMAIL?.trim();
@@ -88,11 +89,22 @@ export async function submitLead(payload: LeadPayload): Promise<boolean> {
   try {
     const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(inbox)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        // The relay rejects server-side requests without a web-server
+        // context; our own domain is the legitimate referrer.
+        Origin: "https://ashevillere.com",
+        Referer: "https://ashevillere.com/",
+      },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
     });
-    return res.ok;
+    if (!res.ok) return false;
+    const data = (await res.json().catch(() => null)) as {
+      success?: string | boolean;
+    } | null;
+    return data?.success === true || data?.success === "true";
   } catch {
     return false;
   }
