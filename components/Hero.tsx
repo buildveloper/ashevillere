@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -9,12 +8,6 @@ import ContourBackground from "./ContourBackground";
 import SearchPanel from "./SearchPanel";
 import ResultsStage from "./ResultsStage";
 import type { GeocodeResult } from "@/lib/geocode";
-
-// Lazy-load WebGL terrain so it never blocks first paint.
-const TerrainStage = dynamic(() => import("./TerrainStage"), {
-  ssr: false,
-  loading: () => null,
-});
 
 /** Rebuild a GeocodeResult from shareable URL params. */
 function resultFromParams(
@@ -38,8 +31,8 @@ function resultFromParams(
 /**
  * Hero — the single "big" motion moment of the site.
  * Headline paints immediately (LCP); eyebrow, subhead, and search rise
- * staggered. Terrain fades up behind. On a successful geocode the results
- * stage appears below and the terrain flies to the property.
+ * staggered. Contour lines draw in behind. On a successful geocode the
+ * results stage appears below.
  */
 export default function Hero() {
   const rootRef = useRef<HTMLElement>(null);
@@ -102,7 +95,6 @@ export default function Hero() {
       className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-6 pb-24 pt-28"
     >
       <ContourBackground />
-      <TerrainStage />
       <div className="relative z-10 mx-auto w-full max-w-6xl">
         <div className="flex max-w-3xl flex-col gap-6">
           <p

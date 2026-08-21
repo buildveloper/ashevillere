@@ -15,17 +15,16 @@ terracotta, and (2) near-black + single neon accent. Neither fits a tool whose
 entire pitch is "grounded and sourced."
 
 Everything below costs nothing beyond free tools. No paid dependencies, no API
-keys, no Mapbox. The hero terrain runs on Three.js (MIT) over elevation data
-baked from USGS 3DEP public domain rasters; the post-lookup 3D map runs on
-MapLibre GL JS (MIT, token-free) over OpenFreeMap tiles.
+keys, no Mapbox. The hero backdrop is the static topographic contour SVG with
+the brand's elevation labels; the post-lookup 3D map stage (MapLibre GL JS over
+OpenFreeMap tiles) is planned but not currently shipped.
 
 ## Identity — "Topographic truth"
 
 The signature motif is the topographic contour line: it belongs as background
-atmosphere in the hero and as the literal rendering surface of the 3D terrain
-stage — a real elevation model of Buncombe County, not an illustration of one.
-It does not reappear as decoration on every page. Restraint is what makes it read
-as intentional.
+atmosphere in the hero — a static SVG of contour paths with elevation labels,
+not an illustration of a rendered terrain model. It does not reappear as
+decoration on every page. Restraint is what makes it read as intentional.
 
 Voice: sentence case, plain language, quiet confidence. Mono eyebrows in caps
 (single word maximum) are the only ALL-CAPS text. Data labels read like survey
@@ -96,27 +95,25 @@ never decorative. `--river` is informational, not a risk signal.
   (signature accent glow), `glass` (inset top highlight used on dark surfaces).
   Elevation is earned: interactive elements sit one step above static ones.
 
-## 3D — Terrain stage
+## Hero backdrop — contour stage
 
-- **Stack:** Three.js + React Three Fiber + Drei (MIT) for the ambient hero
-  backdrop; MapLibre GL JS (MIT, no keys) for the post-lookup map stage, over
-  OpenFreeMap's free public tiles (no API key, no usage limits).
-- **Data:** Buncombe County elevation baked once from USGS 3DEP 1/3 arc-second DEM
-  into `public/terrain/buncombe-heightmap.png` (256×256, 16-bit PNG) + bounds in
-  `lib/terrain.ts`. No runtime fetching for the hero.
-- **Hero behavior:** ambient backdrop with slow camera drift and mouse parallax;
-  on a successful geocode the camera flies to the coordinate (expo-out, ~1.2s) and
-  a pin drops. Colors read from theme tokens as shader uniforms.
-- **Map stage behavior:** after a geocode, a lazy-loaded MapLibre map mounts with
-  real 3D terrain (OpenFreeMap DEM + `setTerrain`) and OSM building extrusion, and
-  flies to the parcel (expo-out, ~1.2s, restrained pitch) — atmosphere, not
-  spectacle. It is mounted only after the lookup succeeds, so the hero LCP is
-  never affected until a search happens.
-- **Performance:** `next/dynamic` + `ssr:false` so the WebGL bundle never blocks
-  LCP; `dpr` capped 1.5–2; mesh simplified on mobile; render loop pauses when the
-  stage is offscreen (IntersectionObserver) and when idle.
-- **Fallbacks:** no WebGL → themed static contour SVG; `prefers-reduced-motion` →
-  static render, no camera movement. Never a blank hole.
+- **Stack:** static inline SVG (contour paths + elevation labels), themed via
+  CSS variables. No WebGL runtime, no elevation data at load time.
+- **Hero behavior:** ambient contour lines draw in once after first paint
+  (GSAP strokeDashoffset); content rises above. The H1 stays painted (LCP).
+- **Map stage (planned, not shipped):** after a lookup, a lazy-loaded MapLibre
+  GL JS map (MIT, no keys) over OpenFreeMap's public tiles was specified for a
+  post-lookup view with real 3D terrain and building extrusion, flying to the
+  parcel (expo-out, ~1.2s, restrained pitch) — atmosphere, not spectacle. It
+  was removed during the rebuild (perf regression) and is not currently in the
+  build; if resurrected it must mount only after the lookup succeeds so the
+  hero LCP is never affected until a search happens.
+- **Performance:** no heavy hero runtime. If the map stage returns, it must
+  stay `next/dynamic` + `ssr:false`, cap `dpr` 1.5–2, simplify on mobile, pause
+  offscreen, and keep LCP < 2.5s · INP < 200ms · CLS < 0.1.
+- **Fallbacks:** none needed for the SVG hero; the map stage (if re-added)
+  would fall back to a static contour graphic without WebGL and to a static
+  render under `prefers-reduced-motion`. Never a blank hole.
 
 ## Motion system
 
@@ -125,18 +122,18 @@ no anime.js, no AOS. `prefers-reduced-motion` disables everything below,
 everywhere, no exceptions — content jumps straight to end states.
 
 - **Timing:** 150 / 300 / 500 / 700 / 1500ms. UI feedback 150–300; reveals 500–700;
-  hero load ≤ 2.5s total; terrain fly-to 1200 expo-out.
-- **Eases:** `power2.out` UI, `power3.out` hero/reveals, `expo.out` fly-to,
-  `expo.inOut` shared transitions.
+  hero load ≤ 2.5s total.
+- **Eases:** `power2.out` UI, `power3.out` hero/reveals, `expo.inOut` shared
+  transitions.
 - **Page load:** one orchestrated sequence, not scattered effects. The H1 is the
   LCP element and is never animated (stays painted). Eyebrow, subhead, search bar
-  rise in staggered (700ms, power3.out, 100ms stagger); contour lines draw in;
-  terrain fades up. Lands by ~2.2s.
+  rise in staggered (700ms, power3.out, 100ms stagger); contour lines draw in.
+  Lands by ~2.2s.
 - **Scroll:** Lenis drives ScrollTrigger section reveals — fade + 24px rise,
   700ms power3.out, 100ms stagger. Sections read as one continuous surface.
-- **Lookup payoff (the product's moment):** terrain flies to the address; three
-  result panels check in sequentially (~140ms stagger) with mono status lines
-  flipping from `CHECKING` to their honest result or unavailable state.
+- **Lookup payoff (the product's moment):** three result panels check in
+  sequentially (~140ms stagger) with mono status lines flipping from `CHECKING`
+  to their honest result or unavailable state.
 - **Micro-interactions:** magnetic primary button; focus ring transitions; card
   hover elevation lift; theme toggle spring; search focus glow.
 - **Rule:** transform/opacity only. No layout-thrashing properties. INP < 200ms.
@@ -161,9 +158,9 @@ everywhere, no exceptions — content jumps straight to end states.
 
 ## Pages
 
-- `/` — product + conversion: nav, hero (terrain + search), three data pillars,
-  how it works, live lookup demo (results stage), trust & sources, pro teaser,
-  FAQ, footer.
+- `/` — product + conversion: nav, hero (contour backdrop + search), three data
+  pillars, how it works, live lookup demo (results stage), trust & sources, pro
+  teaser, FAQ, footer.
 - `/pro` — professionals story (bulk lookups, export, saved searches). Schema-only
   today: framed honestly as "launching later," no fake billing UI.
 - `/methodology` — sources, classification logic, last-updated dates, full
