@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GeocodeResult } from "@/lib/geocode";
 import type { LookupResult, PanelStatus } from "@/lib/lookup";
 import ResultPanel, { type PanelSpec } from "./ResultPanel";
+import LeadForm from "./LeadForm";
 
 const SPECS: PanelSpec[] = [
   {
@@ -127,6 +128,10 @@ export default function ResultsStage({
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-10 md:max-w-2xl">
+        <LeadForm variant="track" address={result.matchedAddress} />
       </div>
     </div>
   );
