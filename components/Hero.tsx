@@ -104,16 +104,16 @@ export default function Hero() {
             BUNCOMBE COUNTY · NC
           </p>
           <h1 className="font-display text-5xl font-medium leading-[1.05] text-ink sm:text-6xl lg:text-7xl">
-            Know what the land{" "}
-            <span className="text-contour">remembers</span> before you buy.
+            Know before you{" "}
+            <span className="text-contour">buy.</span>
           </h1>
           <p
             data-hero-fade
             className="max-w-xl text-lg leading-relaxed text-secondary opacity-0"
           >
-            One address. Flood risk, short-term rental eligibility, and Hurricane
-            Helene recovery context — drawn from free public records, not sales
-            pitches.
+            One address in — flood risk, short-term rental eligibility, and
+            Hurricane Helene recovery context, drawn from free public records
+            you can open yourself. Not sales pitches.
           </p>
           <div data-hero-fade className="opacity-0" id="lookup">
             <SearchPanel onInScope={handleInScope} />
