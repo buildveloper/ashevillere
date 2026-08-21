@@ -78,6 +78,12 @@ export default function Nav() {
           >
             Pro
           </Link>
+          <Link
+            href="/pro/dashboard"
+            className="text-sm text-secondary transition-colors hover:text-ink"
+          >
+            Dashboard
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
