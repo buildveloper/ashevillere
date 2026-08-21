@@ -1,48 +1,12 @@
 import type { Metadata } from "next";
+import SourceCitationCard from "@/components/SourceCitationCard";
+import { DATA_SOURCES } from "@/lib/sources";
 
 export const metadata: Metadata = {
   title: "Methodology & sources — AshevilleRE",
   description:
     "Where AshevilleRE's data comes from, how classification works, and the official disclaimer for flood, STR, and recovery lookups in Buncombe County, NC.",
 };
-
-const SOURCES = [
-  {
-    name: "U.S. Census Bureau Geocoder",
-    org: "U.S. Census Bureau",
-    url: "https://geocoding.geo.census.gov",
-    updated: "Continuously updated",
-    role: "Converts an address to coordinates and scopes lookups to Buncombe County (FIPS 37021) via ZIP-code classification.",
-  },
-  {
-    name: "FEMA National Flood Hazard Layer",
-    org: "Federal Emergency Management Agency",
-    url: "https://www.fema.gov/flood-maps/national-flood-hazard-layer",
-    updated: "Current effective FIRMs",
-    role: "Flood zone determination for a point (NFHL MapServer). Zone codes (AE, AO, X, …) map to flood risk and federal insurance requirements.",
-  },
-  {
-    name: "Buncombe County GIS",
-    org: "Buncombe County, NC",
-    url: "https://gis.buncombecounty.org",
-    updated: "County-maintained",
-    role: "Zoning districts and parcel data. STR eligibility depends on whether a property is inside Asheville city limits (2018 ordinance) or county jurisdiction.",
-  },
-  {
-    name: "Buncombe County open data — Helene damage parcels",
-    org: "Buncombe County, NC",
-    url: "https://data.buncombenc.gov/",
-    updated: "County-maintained",
-    role: "County-published per-parcel records of reported Hurricane Helene damage (Accela table). The tool checks whether a parcel appears in this dataset; it also notes when post-Helene county aerial imagery is available. It is not an official damage determination.",
-  },
-  {
-    name: "NC Department of Public Safety",
-    org: "State of North Carolina",
-    url: "https://www.ncdps.gov",
-    updated: "Ongoing",
-    role: "Hurricane Helene response and recovery programs affecting Buncombe County.",
-  },
-];
 
 export default function MethodologyPage() {
   return (
@@ -62,24 +26,8 @@ export default function MethodologyPage() {
         Data sources
       </h2>
       <div className="mt-6 divide-y divide-line border-y border-line">
-        {SOURCES.map((s) => (
-          <div key={s.name} className="grid gap-2 py-6 md:grid-cols-[1fr_auto]">
-            <div>
-              <h3 className="font-display text-lg font-medium text-ink">{s.name}</h3>
-              <p className="font-mono text-[11px] text-muted">{s.org} · {s.updated}</p>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-secondary">
-                {s.role}
-              </p>
-            </div>
-            <a
-              href={s.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="self-start font-mono text-[11px] text-river transition-colors hover:text-ink"
-            >
-              OFFICIAL SOURCE ↗
-            </a>
-          </div>
+        {DATA_SOURCES.map((s) => (
+          <SourceCitationCard key={s.name} source={s} />
         ))}
       </div>
 
