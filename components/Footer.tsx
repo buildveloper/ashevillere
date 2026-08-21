@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LeadForm from "./LeadForm";
 
 /**
  * Footer — sources, methodology link, and the required public-data
@@ -72,6 +73,11 @@ export default function Footer() {
           </p>
           <ul className="mt-4 space-y-2 text-sm text-secondary">
             <li>
+              <Link href="/blog" className="transition-colors hover:text-ink">
+                Field notes
+              </Link>
+            </li>
+            <li>
               <Link href="/methodology" className="transition-colors hover:text-ink">
                 Methodology &amp; sources
               </Link>
@@ -83,6 +89,10 @@ export default function Footer() {
             </li>
           </ul>
         </div>
+      </div>
+
+      <div className="mx-auto w-full max-w-2xl px-6 pt-16">
+        <LeadForm variant="contact" />
       </div>
 
       <div className="border-t border-line">

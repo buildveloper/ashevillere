@@ -67,6 +67,12 @@ export default function Nav() {
             Data sources
           </Link>
           <Link
+            href="/blog"
+            className="text-sm text-secondary transition-colors hover:text-ink"
+          >
+            Blog
+          </Link>
+          <Link
             href="/pro"
             className="text-sm text-secondary transition-colors hover:text-ink"
           >
