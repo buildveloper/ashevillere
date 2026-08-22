@@ -43,8 +43,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: v.error }, { status: 400 });
   }
 
-  const delivered = await submitLead(v.payload);
-  if (!delivered) {
+  const result = await submitLead(v.payload);
+  if (!result.ok) {
+    // Surface the relay's own message so failures are diagnosable —
+    // never claim a lead was captured when it wasn't.
+    console.error("[lead] submit failed:", result.detail);
     return NextResponse.json(
       { error: "Couldn’t submit right now — please try again in a moment." },
       { status: 502 }

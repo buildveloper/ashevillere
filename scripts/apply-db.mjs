@@ -12,7 +12,7 @@
  *   node scripts/db/apply.mjs            # local file DB
  *   TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... node scripts/db/apply.mjs
  */
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";

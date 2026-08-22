@@ -64,14 +64,16 @@ export function validateLead(input: unknown): LeadValidation {
 }
 
 /**
- * Forward a lead to the FormSubmit AJAX endpoint. Returns true only when the
- * relay explicitly reports success. A missing FORMSUBMIT_EMAIL, a failed
- * request, or a relay that reports `success:false` (e.g. inbox not yet
- * activated) returns false — never a fake success.
+ * Forward a lead to the FormSubmit AJAX endpoint. Returns ok:true only when
+ * the relay explicitly reports success. Any other outcome returns ok:false
+ * with the relay's own message (or the failure class) so callers can surface
+ * the real cause instead of a generic error — never a fake success.
  */
-export async function submitLead(payload: LeadPayload): Promise<boolean> {
+export async function submitLead(
+  payload: LeadPayload
+): Promise<{ ok: boolean; detail?: string }> {
   const inbox = process.env.FORMSUBMIT_EMAIL?.trim();
-  if (!inbox) return false;
+  if (!inbox) return { ok: false, detail: "FORMSUBMIT_EMAIL not configured" };
 
   const subject = payload.address
     ? `Track this address — ${payload.address}`
@@ -100,12 +102,24 @@ export async function submitLead(payload: LeadPayload): Promise<boolean> {
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return false;
+    if (!res.ok) {
+      return { ok: false, detail: `relay HTTP ${res.status}` };
+    }
     const data = (await res.json().catch(() => null)) as {
       success?: string | boolean;
+      message?: string;
     } | null;
-    return data?.success === true || data?.success === "true";
-  } catch {
-    return false;
+    if (data?.success === true || data?.success === "true") {
+      return { ok: true };
+    }
+    return { ok: false, detail: data?.message ?? "relay returned success=false" };
+  } catch (err) {
+    return {
+      ok: false,
+      detail:
+        err instanceof Error && err.name === "TimeoutError"
+          ? "relay timed out after 8s"
+          : "relay unreachable",
+    };
   }
 }

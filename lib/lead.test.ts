@@ -77,9 +77,10 @@ describe("submitLead", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const { submitLead } = await import("./lead");
-    const ok = await submitLead({ email: "buyer@example.com", address: "1 N Pack Sq" });
+    const result = await submitLead({ email: "buyer@example.com", address: "1 N Pack Sq" });
 
-    expect(ok).toBe(false);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toBe("This form needs Activation.");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.headers).toMatchObject({
@@ -88,15 +89,30 @@ describe("submitLead", () => {
     });
   });
 
+  it("returns ok when the relay reports success", async () => {
+    process.env.FORMSUBMIT_EMAIL = "chris@ashevillere.com";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ success: "true", message: "Submitted." }),
+      }))
+    );
+
+    const { submitLead } = await import("./lead");
+    const result = await submitLead({ email: "buyer@example.com" });
+    expect(result.ok).toBe(true);
+  });
+
   it("returns false when FORMSUBMIT_EMAIL is not configured", async () => {
     delete process.env.FORMSUBMIT_EMAIL;
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     const { submitLead } = await import("./lead");
-    const ok = await submitLead({ email: "buyer@example.com" });
+    const result = await submitLead({ email: "buyer@example.com" });
 
-    expect(ok).toBe(false);
+    expect(result.ok).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
