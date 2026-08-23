@@ -64,62 +64,65 @@ export function validateLead(input: unknown): LeadValidation {
 }
 
 /**
- * Forward a lead to the FormSubmit AJAX endpoint. Returns ok:true only when
- * the relay explicitly reports success. Any other outcome returns ok:false
- * with the relay's own message (or the failure class) so callers can surface
- * the real cause instead of a generic error — never a fake success.
+ * Deliver a lead by email via the Resend API (authenticated, server-safe —
+ * FormSubmit rejects datacenter IPs with 403, so the browser-relay approach
+ * cannot work from Vercel). Returns ok:true only on a 2xx response with a
+ * sent id; otherwise ok:false with the failure detail surfaced for logs.
+ *
+ * Env: AUTH_RESEND_KEY (Resend API key), FORMSUBMIT_EMAIL (the lead inbox —
+ * name kept from the earlier relay), EMAIL_FROM (optional; falls back to
+ * Resend's sandbox sender until the sending domain is verified).
  */
 export async function submitLead(
   payload: LeadPayload
 ): Promise<{ ok: boolean; detail?: string }> {
-  const inbox = process.env.FORMSUBMIT_EMAIL?.trim();
-  if (!inbox) return { ok: false, detail: "FORMSUBMIT_EMAIL not configured" };
+  const apiKey = process.env.AUTH_RESEND_KEY?.trim();
+  const to = process.env.FORMSUBMIT_EMAIL?.trim();
+  if (!apiKey || !to) {
+    return { ok: false, detail: "AUTH_RESEND_KEY or FORMSUBMIT_EMAIL not configured" };
+  }
 
   const subject = payload.address
     ? `Track this address — ${payload.address}`
     : "New AshevilleRE lead";
 
-  const body: Record<string, string> = {
-    email: payload.email,
-    _subject: subject,
-    _template: "table",
-    _captcha: "false",
-  };
-  if (payload.address) body["Address"] = payload.address;
-  if (payload.message) body["Message"] = payload.message;
+  const lines = [
+    `Email: ${payload.email}`,
+    payload.address ? `Address: ${payload.address}` : null,
+    payload.message ? `Message: ${payload.message}` : null,
+    `Source: ${payload.address ? "track-this-address form" : "contact form"}`,
+  ].filter(Boolean);
 
   try {
-    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(inbox)}`, {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        Accept: "application/json",
-        // The relay rejects server-side requests without a web-server
-        // context; our own domain is the legitimate referrer.
-        Origin: "https://ashevillere.com",
-        Referer: "https://ashevillere.com/",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM?.trim() || "AshevilleRE <onboarding@resend.dev>",
+        to,
+        subject,
+        text: lines.join("\n"),
+        reply_to: payload.email,
+      }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
-      return { ok: false, detail: `relay HTTP ${res.status}` };
+      const body = await res.text().catch(() => "");
+      return { ok: false, detail: `Resend HTTP ${res.status}: ${body.slice(0, 180)}` };
     }
-    const data = (await res.json().catch(() => null)) as {
-      success?: string | boolean;
-      message?: string;
-    } | null;
-    if (data?.success === true || data?.success === "true") {
-      return { ok: true };
-    }
-    return { ok: false, detail: data?.message ?? "relay returned success=false" };
+    const data = (await res.json().catch(() => null)) as { id?: string } | null;
+    if (!data?.id) return { ok: false, detail: "Resend returned no message id" };
+    return { ok: true };
   } catch (err) {
     return {
       ok: false,
       detail:
         err instanceof Error && err.name === "TimeoutError"
-          ? "relay timed out after 8s"
-          : "relay unreachable",
+          ? "Resend timed out after 8s"
+          : "Resend unreachable",
     };
   }
 }

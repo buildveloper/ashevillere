@@ -66,42 +66,46 @@ describe("submitLead", () => {
     vi.unstubAllGlobals();
   });
 
-  it("only reports success when the relay body says success", async () => {
+  it("delivers via Resend and reports ok on a sent id", async () => {
     process.env.FORMSUBMIT_EMAIL = "chris@ashevillere.com";
-    const fetchMock = vi.fn(async () => {
-      return {
-        ok: true,
-        json: async () => ({ success: "false", message: "This form needs Activation." }),
-      } as unknown as Response;
-    });
+    process.env.AUTH_RESEND_KEY = "re_test_key";
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ id: "4ef9a417-02e9-4d39-a756" }),
+    }));
     vi.stubGlobal("fetch", fetchMock);
 
     const { submitLead } = await import("./lead");
     const result = await submitLead({ email: "buyer@example.com", address: "1 N Pack Sq" });
 
-    expect(result.ok).toBe(false);
-    expect(result.detail).toBe("This form needs Activation.");
+    expect(result.ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(init.headers).toMatchObject({
-      Origin: "https://ashevillere.com",
-      Referer: "https://ashevillere.com/",
-    });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.resend.com/emails");
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      "Bearer re_test_key"
+    );
+    const body = JSON.parse(init.body as string);
+    expect(body.to).toBe("chris@ashevillere.com");
+    expect(body.subject).toBe("Track this address — 1 N Pack Sq");
   });
 
-  it("returns ok when the relay reports success", async () => {
+  it("surfaces the relay failure detail when Resend errors", async () => {
     process.env.FORMSUBMIT_EMAIL = "chris@ashevillere.com";
+    process.env.AUTH_RESEND_KEY = "re_test_key";
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ success: "true", message: "Submitted." }),
+        ok: false,
+        status: 403,
+        text: async () => "Forbidden",
       }))
     );
 
     const { submitLead } = await import("./lead");
     const result = await submitLead({ email: "buyer@example.com" });
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toContain("HTTP 403");
   });
 
   it("returns false when FORMSUBMIT_EMAIL is not configured", async () => {
