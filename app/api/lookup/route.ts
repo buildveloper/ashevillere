@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runLookup, type LookupContext } from "@/lib/lookup";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Abuse floor: 30 full lookups/min/IP (each fans out to FEMA + county GIS).
+const LIMIT = 30;
+
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(`lookup:${clientIp(req)}`, LIMIT);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many lookups — please wait a moment and try again." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+    );
+  }
+
   const lat = Number(req.nextUrl.searchParams.get("lat"));
   const lon = Number(req.nextUrl.searchParams.get("lon"));
-  const zip = req.nextUrl.searchParams.get("zip") ?? undefined;
-  const city = req.nextUrl.searchParams.get("city") ?? undefined;
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
     return NextResponse.json({ error: "Missing lat/lon." }, { status: 400 });
   }

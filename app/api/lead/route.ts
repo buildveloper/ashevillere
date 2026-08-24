@@ -1,33 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitLead, validateLead } from "@/lib/lead";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Basic in-memory rate limit (per process): 5 submissions / 60s per client.
-// Not a hard security boundary — it keeps a happy path from being hammered.
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 5;
-const hits = new Map<string, number[]>();
-
-function rateLimited(key: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) {
-    hits.set(key, recent);
-    return true;
-  }
-  recent.push(now);
-  hits.set(key, recent);
-  return false;
-}
+// Abuse floor: 5 lead submissions/min/IP — leads trigger real emails.
+const LIMIT = 5;
 
 export async function POST(req: NextRequest) {
-  const client = req.headers.get("x-forwarded-for") ?? "unknown";
-  if (rateLimited(client)) {
+  const rl = rateLimit(`lead:${clientIp(req)}`, LIMIT);
+  if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many submissions — try again in a minute." },
-      { status: 429 }
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
     );
   }
 
