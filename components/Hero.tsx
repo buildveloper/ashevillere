@@ -25,10 +25,7 @@ export default function Hero() {
             Know before you{" "}
             <span className="text-contour">buy.</span>
           </h1>
-          <p
-            data-hero-fade
-            className="max-w-xl text-lg leading-relaxed text-secondary opacity-0"
-          >
+          <p className="max-w-xl text-lg leading-relaxed text-secondary">
             One address in — flood risk, short-term rental eligibility, and
             Hurricane Helene recovery context, drawn from free public records
             you can open yourself. Not sales pitches.
