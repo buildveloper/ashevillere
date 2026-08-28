@@ -62,6 +62,30 @@ export default function MethodologyPage() {
       </ul>
 
       <h2 className="mt-14 font-display text-2xl font-medium text-ink">
+        Privacy &amp; anonymous usage
+      </h2>
+      <div className="mt-6 space-y-4 text-sm leading-relaxed text-secondary">
+        <p>
+          Every completed address lookup is logged anonymously. We keep only
+          the non-identifying basics: the ZIP code area, when the lookup
+          happened, which of the three panels (flood, STR, recovery) returned a
+          result, and the flood-zone or STR-jurisdiction category when one was
+          returned. We never store your street address, your exact coordinates,
+          your name, your email, or your IP address with this activity — nothing
+          that could identify you or the property you looked up. No individual
+          search history can be reconstructed from what we keep.
+        </p>
+        <p>
+          AshevilleRE Pro subscribers see anonymous, aggregate summaries of
+          this activity — for example, how many lookups happened in a given ZIP
+          in the last week, or how that area is trending. That aggregate view
+          never reveals an individual address, search, or identity. The free
+          lookup is unaffected by all of this: no account required, no tracking
+          profile, same answers.
+        </p>
+      </div>
+
+      <h2 className="mt-14 font-display text-2xl font-medium text-ink">
         Disclaimer
       </h2>
       <div className="mt-6 rounded-xl border border-line bg-surface p-6 text-sm leading-relaxed text-secondary">

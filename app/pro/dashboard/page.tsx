@@ -2,20 +2,31 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { proSubscriptions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { lookupEvents, proSubscriptions } from "@/db/schema";
+import { and, asc, eq, gte, lt } from "drizzle-orm";
 import Link from "next/link";
 import SponsorSlots from "@/components/SponsorSlots";
+import MarketInterestSection from "@/components/MarketInterestSection";
+import { rollupLookupRows, type MarketRollup } from "@/lib/market-intel";
 
 export const metadata: Metadata = {
   title: "Pro dashboard — AshevilleRE",
   description:
-    "Bulk lookups, CSV export, saved searches, and advanced filters for AshevilleRE Pro subscribers.",
+    "Market Interest, bulk lookups, CSV export, saved searches, and advanced filters for AshevilleRE Pro subscribers.",
 };
 
 export const dynamic = "force-dynamic";
 
+const DAY_MS = 86_400_000;
+const WINDOWS = [7, 30, 90];
+
 const FEATURES = [
+  {
+    title: "Market Interest",
+    body: "Live, anonymous lookup trends — which ZIPs people are checking right now and what the three panels are returning.",
+    live: true,
+    href: "#market-interest",
+  },
   {
     title: "Bulk lookups",
     body: "Check dozens of addresses at once — a portfolio, a farm list, a boundary.",
@@ -36,18 +47,20 @@ const FEATURES = [
 
 /**
  * Pro dashboard — gated behind magic-link auth. Everything here is honest
- * about what exists: feature cards are schema-only ("launching later"),
- * subscription state reads the real pro_subscriptions table, and sponsor
- * placements render only while their paid window is active.
+ * about what exists: Market Interest renders real anonymous lookup rollups
+ * from the lookup_events table, the remaining feature cards are schema-only
+ * ("launching later"), subscription state reads the real pro_subscriptions
+ * table, and sponsor placements render only while their paid window is active.
  */
 export default async function ProDashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; days?: string }>;
 }) {
   const session = await auth();
+  const sp = await searchParams;
   if (!session?.user) {
-    const { next } = await searchParams;
+    const { next } = sp;
     redirect(`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`);
   }
 
@@ -69,6 +82,50 @@ export default async function ProDashboard({
         ? "active"
         : subscription.status;
 
+  // Market Interest — anonymous aggregate lookup rollup. Queries the real
+  // lookup_events table (current window + the prior, equal-length window for
+  // trend). Fail-closed to an honest "not available" state rather than
+  // guessed numbers if the table hasn't been migrated yet on a given host.
+  const daysRaw = Number(sp.days);
+  const windowDays = WINDOWS.includes(daysRaw) ? daysRaw : 30;
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - windowDays * DAY_MS);
+  const prevCutoff = new Date(now.getTime() - 2 * windowDays * DAY_MS);
+
+  const selectCols = {
+    zip: lookupEvents.zip,
+    createdAt: lookupEvents.createdAt,
+    flood: lookupEvents.flood,
+    str: lookupEvents.str,
+    recovery: lookupEvents.recovery,
+    floodZone: lookupEvents.floodZone,
+    strJurisdiction: lookupEvents.strJurisdiction,
+  };
+
+  let rollup: MarketRollup | null = null;
+  try {
+    const [currentRows, previousRows] = await Promise.all([
+      db
+        .select(selectCols)
+        .from(lookupEvents)
+        .where(gte(lookupEvents.createdAt, cutoff))
+        .orderBy(asc(lookupEvents.createdAt)),
+      db
+        .select(selectCols)
+        .from(lookupEvents)
+        .where(
+          and(
+            gte(lookupEvents.createdAt, prevCutoff),
+            lt(lookupEvents.createdAt, cutoff)
+          )
+        ),
+    ]);
+    rollup = rollupLookupRows(currentRows, previousRows, windowDays);
+  } catch (err) {
+    // The dashboard stays honest and usable even if market data isn't ready.
+    console.error("[dashboard] Market Interest unavailable:", err);
+  }
+
   return (
     <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-32">
       <p className="font-mono text-[11px] tracking-[0.18em] text-muted uppercase">
@@ -87,21 +144,39 @@ export default async function ProDashboard({
       </p>
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2">
-        {FEATURES.map((f) => (
-          <div
-            key={f.title}
-            className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-7 shadow-soft"
-          >
-            <h2 className="font-display text-xl font-medium text-ink">
-              {f.title}
-            </h2>
-            <p className="text-sm leading-relaxed text-secondary">{f.body}</p>
-            <p className="mt-auto pt-3 font-mono text-[11px] text-contour">
-              LAUNCHING LATER · SCHEMA ONLY
-            </p>
-          </div>
-        ))}
+        {FEATURES.map((f) =>
+          "live" in f && f.live ? (
+            <a
+              key={f.title}
+              href={f.href}
+              className="flex flex-col gap-2 rounded-xl border border-contour/40 bg-surface p-7 shadow-soft transition-colors duration-200 hover:border-contour sm:col-span-2"
+            >
+              <h2 className="font-display text-xl font-medium text-ink">
+                {f.title}
+              </h2>
+              <p className="text-sm leading-relaxed text-secondary">{f.body}</p>
+              <p className="mt-auto pt-3 font-mono text-[11px] text-contour">
+                LIVE NOW · REAL DATA
+              </p>
+            </a>
+          ) : (
+            <div
+              key={f.title}
+              className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-7 shadow-soft"
+            >
+              <h2 className="font-display text-xl font-medium text-ink">
+                {f.title}
+              </h2>
+              <p className="text-sm leading-relaxed text-secondary">{f.body}</p>
+              <p className="mt-auto pt-3 font-mono text-[11px] text-contour">
+                LAUNCHING LATER · SCHEMA ONLY
+              </p>
+            </div>
+          )
+        )}
       </div>
+
+      <MarketInterestSection rollup={rollup} windowDays={windowDays} />
 
       <div className="mt-10 rounded-2xl border border-line bg-surface p-8">
         <p className="font-mono text-[11px] tracking-[0.18em] text-muted uppercase">

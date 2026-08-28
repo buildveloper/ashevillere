@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runLookup, type LookupContext } from "@/lib/lookup";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { logLookupEvent } from "@/lib/lookup-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,5 +31,14 @@ export async function GET(req: NextRequest) {
     address: req.nextUrl.searchParams.get("address") ?? undefined,
   };
   const result = await runLookup(ctx);
+
+  // Anonymous aggregate logging — best-effort and time-boxed so telemetry can
+  // never block or slow the free consumer lookup (lib/lookup-log.ts). The
+  // response below is identical to what the tool already returns.
+  await Promise.race([
+    logLookupEvent(ctx, result),
+    new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+  ]);
+
   return NextResponse.json(result);
 }

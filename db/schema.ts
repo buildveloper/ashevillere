@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /**
  * Day 9 — Turso (libSQL) schema.
@@ -109,3 +109,36 @@ export const proSubscriptions = sqliteTable("pro_subscriptions", {
     .default(false),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
+
+/* ------------------------------------------------------------------ */
+/* Anonymous lookup activity (Pro "Market Interest")                   */
+/* ------------------------------------------------------------------ */
+/*
+ * One row per completed public lookup, storing ONLY non-identifying
+ * dimensions for aggregate reporting: ZIP area, timestamp, which of the
+ * three panels returned a real result, and the flood-zone / STR-jurisdiction
+ * category when relevant. No street address, no coordinates, no IP, no
+ * identity — see the methodology page's privacy disclosure. Populated
+ * best-effort by lib/lookup-log.ts; never queried on the public path.
+ */
+export const lookupEvents = sqliteTable(
+  "lookup_events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** ZIP area (NULL when the geocoder returned none). Never a street address. */
+    zip: text("zip"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    /** Whether each panel returned a real result for this lookup. */
+    flood: integer("flood", { mode: "boolean" }).notNull().default(false),
+    str: integer("str", { mode: "boolean" }).notNull().default(false),
+    recovery: integer("recovery", { mode: "boolean" }).notNull().default(false),
+    /** Flood zone category (e.g. "AE", "X") when the flood panel returned a result. */
+    floodZone: text("flood_zone"),
+    /** STR jurisdiction category ("city" | "county" | "other-town" | "unknown"). */
+    strJurisdiction: text("str_jurisdiction"),
+  },
+  (t) => [
+    index("lookup_events_zip_idx").on(t.zip),
+    index("lookup_events_created_at_idx").on(t.createdAt),
+  ]
+);
