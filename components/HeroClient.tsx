@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import SearchPanel from "./SearchPanel";
 import ResultsStage from "./ResultsStage";
+import ResultsSkeleton from "./ResultsSkeleton";
 import type { GeocodeResult } from "@/lib/geocode";
 
 /** Rebuild a GeocodeResult from shareable URL params. */
@@ -49,6 +50,7 @@ export default function HeroClient() {
     )
   );
   const [lastResult, setLastResult] = useState<GeocodeResult | null>(deepResult);
+  const [searching, setSearching] = useState(false);
 
   // Scroll deep-linked results into view after first paint.
   useEffect(() => {
@@ -97,13 +99,17 @@ export default function HeroClient() {
   return (
     <div ref={rootRef}>
       <div data-hero-fade className="opacity-0" id="lookup">
-        <SearchPanel onInScope={handleInScope} />
+        <SearchPanel onInScope={handleInScope} onSearchState={setSearching} />
       </div>
-      {lastResult && (
+      {lastResult ? (
         <div id="results" className="mt-16 scroll-mt-24">
           <ResultsStage result={lastResult} />
         </div>
-      )}
+      ) : searching ? (
+        <div id="results" className="mt-16 scroll-mt-24" aria-hidden="true">
+          <ResultsSkeleton />
+        </div>
+      ) : null}
     </div>
   );
 }

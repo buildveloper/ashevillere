@@ -6,6 +6,8 @@ import Lenis from "lenis";
 export default function LenisProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Perf-measurement hook: ?nolenis=1 disables smooth scroll for A/B probing.
+    if (new URLSearchParams(window.location.search).has("nolenis")) return;
 
     const lenis = new Lenis({
       duration: 1.15,

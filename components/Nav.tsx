@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
+import LogoMark from "./LogoMark";
 
 /**
  * Sticky glass nav: contour mark, section links, theme toggle.
@@ -33,21 +34,7 @@ export default function Nav() {
           className="group flex items-center gap-2.5"
           aria-label="AshevilleRE home"
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            className="text-contour transition-transform duration-300 group-hover:rotate-6"
-            aria-hidden="true"
-          >
-            <path d="M2 18c4-6 8-6 12-2s6 2 8-2" />
-            <path d="M2 14c4-5 8-5 12-1s6 2 8-2" />
-            <path d="M2 22c4-6 8-6 12-2s6 2 8-2" />
-          </svg>
+          <LogoMark className="h-7 w-7 shrink-0 transition-transform duration-300 group-hover:rotate-6" />
           <span className="font-display text-lg font-medium tracking-tight text-ink">
             Asheville<span className="text-contour">RE</span>
           </span>

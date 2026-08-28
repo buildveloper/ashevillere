@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import ContourBackground from "./ContourBackground";
 import HeroClient from "./HeroClient";
+import SearchShell from "./SearchShell";
 
 /**
  * Hero — server component. The eyebrow, H1, and subhead are plain markup:
@@ -31,7 +32,13 @@ export default function Hero() {
             you can open yourself. Not sales pitches.
           </p>
 
-          <Suspense fallback={<div id="lookup" />}>
+          <Suspense
+            fallback={
+              <div id="lookup" className="opacity-0">
+                <SearchShell />
+              </div>
+            }
+          >
             <HeroClient />
           </Suspense>
         </div>

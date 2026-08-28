@@ -1,0 +1,8 @@
+<svg width="200" height="200" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AshevilleRE mark">
+  <title>AshevilleRE — nested contour mark</title>
+  <rect width="100" height="100" rx="20" fill="#EDEFE7"/>
+  <path d="M5,78 Q50,38 95,78" fill="none" stroke="#6B7268" stroke-width="3.4" stroke-linecap="round" opacity="0.55"/>
+  <path d="M14,68 Q50,32 86,68" fill="none" stroke="#1E3B2C" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M23,58 Q50,26 77,58" fill="none" stroke="#2C5240" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M33,48 Q50,22 67,48" fill="none" stroke="#B8763A" stroke-width="3.6" stroke-linecap="round"/>
+</svg>

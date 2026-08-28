@@ -28,9 +28,44 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ashevillere.com"),
   title: "AshevilleRE — Property truth for Buncombe County",
   description:
     "Look up flood risk, short-term rental eligibility, and Hurricane Helene recovery context for any address in Buncombe County, NC — built on free public data.",
+  applicationName: "AshevilleRE",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/site.webmanifest",
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "AshevilleRE",
+    title: "AshevilleRE — Property truth for Buncombe County",
+    description:
+      "Look up flood risk, short-term rental eligibility, and Hurricane Helene recovery context for any address in Buncombe County, NC — built on free public data.",
+    images: [
+      {
+        url: "/og/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "AshevilleRE — property truth for Buncombe County, NC",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AshevilleRE — Property truth for Buncombe County",
+    description:
+      "Look up flood risk, short-term rental eligibility, and Hurricane Helene recovery context for any address in Buncombe County, NC — built on free public data.",
+    images: ["/og/og-image.png"],
+  },
 };
 
 const themeInit = `(function(){try{var k="ashevillere-theme",s=localStorage.getItem(k);var d=s?s==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;

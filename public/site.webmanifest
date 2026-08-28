@@ -1,0 +1,26 @@
+{
+  "name": "AshevilleRE",
+  "short_name": "AshevilleRE",
+  "description": "Property truth for Buncombe County, NC — flood risk, STR eligibility, and Helene recovery context from free public records.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EDEFE7",
+  "theme_color": "#EDEFE7",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}
