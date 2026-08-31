@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Fraunces, Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import LenisProvider from "@/components/LenisProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Nav from "@/components/Nav";
@@ -89,6 +91,8 @@ export default function RootLayout({
             <Nav />
             {children}
             <Footer />
+            <Analytics />
+            <SpeedInsights />
           </LenisProvider>
         </ThemeProvider>
       </body>
