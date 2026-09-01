@@ -1,9 +1,13 @@
 import type { FormEvent, ReactNode } from "react";
 
+// Example chips are verified live end-to-end (Census one-hop, in-scope). The
+// former "68 Old Leicester Rd, Weaverville" was dropped: Census has zero
+// matches for that road (confirmed live), the county-GIS fallback could not be
+// verified, and the road isn't in Weaverville anyway.
 export const EXAMPLES = [
   "1 N Pack Sq, Asheville",
   "20 Church St, Black Mountain",
-  "68 Old Leicester Rd, Weaverville",
+  "48 Griffing Blvd, Asheville",
 ];
 
 /**
