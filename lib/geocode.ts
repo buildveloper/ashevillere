@@ -105,6 +105,51 @@ export function classifyCensusResponse(
 }
 
 /**
+ * Common USPS street-suffix tokens (abbreviated and full). Used to decide
+ * whether Census rewrote the suffix of a matched address.
+ */
+const STREET_SUFFIXES = new Set([
+  "ST", "AVE", "BLVD", "RD", "DR", "LN", "WAY", "TER", "CT", "PL", "PK",
+  "CIR", "HWY", "TRL", "SQ", "LOOP", "PIKE", "RUN", "HILL", "VIEW", "RIDGE",
+  "CROSS", "PATH", "GREEN", "BEND", "COVE", "FORK", "HOLLOW", "MEWS", "ROW",
+  "WALK", "GATE", "GLEN", "KNOLL", "MEADOW", "PASS", "POINT", "ALY", "WY",
+  "CENTER", "CENTRE", "CREEK", "FALLS", "FIELD", "GARDEN", "GROVE",
+  "HEIGHTS", "JUNCTION", "LAKE", "LIGHT", "MOUNT", "MOUNTAIN", "PARK",
+  "PLACE", "RIVER", "SQUARE", "STATION", "VALLEY", "VILLAGE",
+  "AVENUE", "BOULEVARD", "CIRCLE", "COURT", "DRIVE", "HIGHWAY", "TRAIL",
+  "TURNPIKE", "LANE", "ROAD", "STREET",
+]);
+
+/** Extract the street-suffix token (e.g. "PL") from a street line, or null. */
+function suffixOf(street: string): string | null {
+  const tokens = street.toUpperCase().split(/\s+/).filter(Boolean);
+  const last = tokens[tokens.length - 1];
+  if (!last || !STREET_SUFFIXES.has(last)) return null;
+  return last;
+}
+
+/**
+ * Detect when Census canonicalized the user's street line to a DIFFERENT
+ * suffix (e.g. user "70 Woodfin Pl" → Census "70 WOODFIN ST"). Census does
+ * this silently when it matches the house number against a TIGER range on the
+ * same-named road — the resulting canonical address can be fabricated.
+ * Returns the conflicting {user, census} suffixes, or null when there is no
+ * conflict (including normal canonicalization like "1 N Pack Sq" →
+ * "1 N PACK SQ", where the suffix agrees). Only the street line (the part
+ * before the first comma) is compared.
+ */
+export function streetSuffixConflict(
+  userAddress: string,
+  censusAddress: string
+): { user: string; census: string } | null {
+  const userSuffix = suffixOf(userAddress.split(",")[0]);
+  const censusSuffix = suffixOf(censusAddress.split(",")[0]);
+  if (!userSuffix || !censusSuffix) return null;
+  if (userSuffix === censusSuffix) return null;
+  return { user: userSuffix, census: censusSuffix };
+}
+
+/**
  * Look up a street address (house number + street) in Buncombe County's
  * AccelaParcelAddress table — the county's own address→parcel link. Returns a
  * GeocodeResult with parcel-point coordinates when found, or null when the
@@ -227,6 +272,18 @@ export async function geocodeAddress(raw: string): Promise<GeocodeResult> {
   const classified = classifyCensusResponse(data);
 
   if (classified.status === "in-scope") {
+    // Census silently rewrites some street suffixes — live-confirmed: "70
+    // Woodfin Pl, Asheville" returns "70 WOODFIN ST, ASHEVILLE, NC, 28801"
+    // (the same tiger line and point as an explicit WOODFIN ST query), while
+    // the county's parcel records have 70 WOODFIN PL as a real parcel and no
+    // 70 WOODFIN ST. When the suffix differs from what the user typed,
+    // cross-check the user's street line in the county's authoritative parcel
+    // table and prefer that record when the user's version exists there.
+    const conflict = streetSuffixConflict(address, classified.matchedAddress ?? "");
+    if (conflict) {
+      const county = await lookupCountyAddress(address);
+      if (county) return county;
+    }
     return classified;
   }
 

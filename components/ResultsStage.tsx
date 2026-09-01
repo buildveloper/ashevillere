@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { GeocodeResult } from "@/lib/geocode";
-import type { LookupResult, PanelStatus } from "@/lib/lookup";
+import { lookupFailurePanels, type LookupResult, type PanelStatus } from "@/lib/lookup";
 import ResultPanel, { type PanelSpec } from "./ResultPanel";
 import LeadForm from "./LeadForm";
 
@@ -77,11 +77,45 @@ export default function ResultsStage({
       });
       if (result.zip) params.set("zip", result.zip);
       if (result.matchedAddress) params.set("address", result.matchedAddress);
-      const res = await fetch(`/api/lookup?${params.toString()}`);
-      if (cancelled) return;
-      const data = (await res.json()) as LookupResult;
-      if (cancelled) return;
-      setLookup(data);
+      // A new address starts fresh: panels go back to CHECKING instead of
+      // showing the previous address's outcome while the next lookup runs.
+      setLookup(INITIAL);
+      try {
+        const res = await fetch(`/api/lookup?${params.toString()}`, {
+          // Bound the whole lookup so a hung upstream can't leave the panels
+          // spinning forever. Server-side calls each allow ~20s worst case;
+          // give the client the same order of magnitude plus network slack.
+          signal: AbortSignal.timeout(30000),
+        });
+        if (cancelled) return;
+        if (!res.ok) {
+          // A non-2xx response (429 rate limit, 5xx) has no panel data — parse
+          // the server's error message when present, then land on an honest
+          // failure state instead of "checking" forever.
+          let message = `The lookup service returned an error (${res.status}). Try again in a moment.`;
+          try {
+            const errBody = (await res.json()) as { error?: string };
+            if (errBody.error) message = errBody.error;
+          } catch {
+            // Non-JSON error body — keep the status-based message.
+          }
+          if (cancelled) return;
+          setLookup(lookupFailurePanels(message));
+          return;
+        }
+        const data = (await res.json()) as LookupResult;
+        if (cancelled) return;
+        setLookup(data);
+      } catch {
+        // Network failure, timeout, or unreadable body — the one case that
+        // previously left the panels spinning forever.
+        if (cancelled) return;
+        setLookup(
+          lookupFailurePanels(
+            "The lookup could not be completed — check your connection and try again. No guessed data is shown below."
+          )
+        );
+      }
     };
     void run();
 
@@ -92,6 +126,19 @@ export default function ResultsStage({
 
   const statusOf = (key: "flood" | "str" | "recovery"): PanelStatus =>
     lookup[key]?.status ?? "checking";
+
+  // Site-wide outage banner: only show once the lookup has finished settling
+  // (no panel still in "checking") AND at least one panel landed on
+  // "unavailable" or "error". "not-connected" is a known product state for
+  // sources that aren't wired yet — it does not signal an outage and is
+  // intentionally excluded.
+  const allResolved = (["flood", "str", "recovery"] as const).every(
+    (k) => statusOf(k) !== "checking",
+  );
+  const anyOutage = (["flood", "str", "recovery"] as const).some(
+    (k) => statusOf(k) === "unavailable" || statusOf(k) === "error",
+  );
+  const showOutageBanner = allResolved && anyOutage;
 
   return (
     <div ref={rootRef} className="w-full">
@@ -109,6 +156,21 @@ export default function ResultsStage({
           {result.zip} · CENSUS BUREAU
         </p>
       </div>
+
+      {showOutageBanner && (
+        <div
+          role="alert"
+          className="mb-6 rounded-xl border border-clay/30 bg-paper/60 p-4"
+        >
+          <p className="font-mono text-[11px] tracking-[0.18em] text-clay uppercase">
+            Some data sources unreachable
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-secondary">
+            The affected panels below show official-source links instead of
+            guessed data — nothing here is fabricated. Try again in a moment.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         {SPECS.map((spec) => {

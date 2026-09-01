@@ -48,6 +48,22 @@ export interface LookupResult {
   recovery: LookupPanelResult;
 }
 
+/**
+ * Terminal shape for a lookup that could not be completed at all (network
+ * failure, timeout, non-2xx response). Every panel lands on `unavailable`
+ * with an honest message so the UI never sits in "checking" forever and never
+ * implies data we didn't fetch.
+ */
+export function lookupFailurePanels(
+  message = "We couldn't complete this lookup. The data services are temporarily unreachable — no guessed data is shown below."
+): LookupResult {
+  return {
+    flood: { key: "flood", status: "unavailable", message },
+    str: { key: "str", status: "unavailable", message },
+    recovery: { key: "recovery", status: "unavailable", message },
+  };
+}
+
 export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
   // Run all three checks in parallel — they are independent.
   const [flood, str, recovery] = await Promise.all([
