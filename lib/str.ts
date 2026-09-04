@@ -28,6 +28,8 @@
  *   Layer 59/61/66 — Woodfin / Black Mountain / Montreat zoning (other towns)
  */
 
+import { queryPoint } from "./arcgis";
+
 export type StrStatus = "result" | "unavailable" | "error";
 
 export interface StrResult {
@@ -78,59 +80,6 @@ const RESIDENTIAL_DISTRICTS = new Set([
 const DISCLAIMER =
   "HOA covenants can further restrict short-term rentals independent of city/county zoning — this tool cannot check those.";
 
-/** Fetch with explicit timeout + retry once. Returns Response or null. */
-async function fetchWithRetry(
-  url: string,
-  timeoutMs = 10000
-): Promise<Response | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(timeoutMs),
-        headers: { Accept: "application/json" },
-      });
-      return res;
-    } catch {
-      if (attempt === 1) return null;
-    }
-  }
-  return null;
-}
-
-interface ArcGisFeature {
-  attributes?: Record<string, string | number | null>;
-}
-
-interface ArcGisResponse {
-  features?: ArcGisFeature[];
-  error?: { message?: string };
-}
-
-/** Query an ArcGIS layer for the feature at a point. */
-async function queryPoint(
-  layerId: number,
-  lat: number,
-  lon: number,
-  outFields: string
-): Promise<ArcGisResponse | null> {
-  const url = new URL(`${BUNCOMBE_ROOT}/${layerId}/query`);
-  url.searchParams.set("geometry", `${lon},${lat}`);
-  url.searchParams.set("geometryType", "esriGeometryPoint");
-  url.searchParams.set("inSR", "4326");
-  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
-  url.searchParams.set("where", "1=1");
-  url.searchParams.set("outFields", outFields);
-  url.searchParams.set("returnGeometry", "false");
-  url.searchParams.set("f", "json");
-  const res = await fetchWithRetry(url.toString());
-  if (!res || !res.ok) return null;
-  try {
-    return (await res.json()) as ArcGisResponse;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Determine jurisdiction via the Cities and Towns layer (27). A feature with
  * a non-empty DESCRIPTION/DISTCODE means inside that municipality; the
@@ -142,7 +91,7 @@ async function jurisdiction(
 ): Promise<
   { kind: "city" | "county" | "other-town"; name: string; distCode?: string } | null
 > {
-  const data = await queryPoint(CITIES_LAYER, lat, lon, "DESCRIPTION,DISTCODE");
+  const data = await queryPoint(BUNCOMBE_ROOT, CITIES_LAYER, lat, lon, "DESCRIPTION,DISTCODE");
   if (!data) return null;
   const attrs = data.features?.[0]?.attributes;
   if (!attrs) return null;
@@ -165,7 +114,7 @@ async function zoning(
 ): Promise<{ code: string; layerName: string } | null> {
   if (!jur) return null;
   if (jur.kind === "city") {
-    const data = await queryPoint(ASHEVILLE_ZONING_LAYER, lat, lon, "DISTRICTS");
+    const data = await queryPoint(BUNCOMBE_ROOT, ASHEVILLE_ZONING_LAYER, lat, lon, "DISTRICTS");
     const code = data?.features?.[0]?.attributes?.DISTRICTS;
     if (code) return { code: String(code).trim(), layerName: "City of Asheville Zoning" };
     return null;
@@ -173,14 +122,14 @@ async function zoning(
   if (jur.kind === "other-town") {
     // Try the matching town zoning layer.
     for (const [layerId, town] of Object.entries(OTHER_TOWN_ZONING)) {
-      const data = await queryPoint(Number(layerId), lat, lon, "*");
+      const data = await queryPoint(BUNCOMBE_ROOT, Number(layerId), lat, lon, "*");
       const code = data?.features?.[0]?.attributes?.ZONING_CODE;
       if (code) return { code: String(code).trim(), layerName: `${town} Zoning` };
     }
     return null;
   }
   // County.
-  const data = await queryPoint(COUNTY_ZONING_LAYER, lat, lon, "ZONING_CODE");
+  const data = await queryPoint(BUNCOMBE_ROOT, COUNTY_ZONING_LAYER, lat, lon, "ZONING_CODE");
   const code = data?.features?.[0]?.attributes?.ZONING_CODE;
   if (code) return { code: String(code).trim(), layerName: "Buncombe County Zoning" };
   return null;

@@ -9,6 +9,7 @@
  */
 
 import proj4 from "proj4";
+import { isBuncombePoint, type BoundaryStatus } from "./boundary";
 
 /** NC SPCS83 (EPSG:2264, US survey feet) → WGS84. */
 const NC_SPCS83_FTUS = "+proj=lcc +lat_1=34.33333333333334 +lat_2=36.16666666666666 +lat_0=33.75 +lon_0=-79 +x_0=609601.2192024384 +y_0=0 +datum=NAD83 +units=us-ft +no_defs";
@@ -34,16 +35,26 @@ export interface GeocodeResult {
 
 /**
  * ZIP codes within Buncombe County, NC (county FIPS 37021).
- * 288xx = Asheville; 28704/28709/28711/28715/28716/28778/28787 = the
- * surrounding county towns (Arden, Barnardsville, Black Mountain, Candler,
- * Fairview, Leicester, Swannanoa, Weaverville, …).
+ * 288xx = Asheville; 28701/28704/28709/28711/28715/28716/28730/28732/28748/
+ * 28778/28787 = the surrounding county communities (Alexander, Arden,
+ * Barnardsville, Black Mountain, Candler, Fairview, Fletcher, Leicester,
+ * Swannanoa, Weaverville, …). Sourced from Buncombe County's own street
+ * centerline layer ZIP domain (bcmap_vt MapServer/1, LZIP/RZIP).
+ *
+ * This list is NOT the scope gate anymore — the authoritative in/out decision
+ * is the point-in-polygon boundary check (lib/boundary.ts). ZIPs are the
+ * degraded-mode fallback when the county GIS is unreachable.
  */
 export const BUNCOMBE_ZIPS = new Set([
+  "28701",
   "28704",
   "28709",
   "28711",
   "28715",
   "28716",
+  "28730",
+  "28732",
+  "28748",
   "28778",
   "28787",
   "28801",
@@ -83,9 +94,18 @@ export function isBuncombeZip(zip: string | undefined): boolean {
   return BUNCOMBE_ZIPS.has(zip.trim().toUpperCase());
 }
 
-/** Classify a raw Census geocoder response (pure, unit-testable). */
+/**
+ * Classify a raw Census geocoder response (pure, unit-testable).
+ *
+ * `boundary` is the authoritative in/out verdict from the county GIS
+ * (lib/boundary.ts). When absent (degraded mode — county GIS unreachable),
+ * the ZIP allowlist decides instead. Census gives no county field, so this
+ * ZIP/boundary distinction is exactly what separates "Alexander, Buncombe
+ * County" from "Alexander County, NC".
+ */
 export function classifyCensusResponse(
-  data: CensusResponse
+  data: CensusResponse,
+  boundary?: BoundaryStatus
 ): Omit<GeocodeResult, "message"> {
   const matches = data?.result?.addressMatches ?? [];
   const match = matches[0];
@@ -93,8 +113,9 @@ export function classifyCensusResponse(
     return { status: "no-match" };
   }
   const zip = match.addressComponents?.zip;
+  const inBoundary = boundary === "in" || (boundary === undefined && isBuncombeZip(zip));
   return {
-    status: isBuncombeZip(zip) ? "in-scope" : "outside",
+    status: inBoundary ? "in-scope" : "outside",
     matchedAddress: match.matchedAddress,
     longitude: match.coordinates?.x,
     latitude: match.coordinates?.y,
@@ -217,8 +238,14 @@ async function lookupCountyAddress(
  * result into the four states the UI needs: in-scope (geocoded inside
  * Buncombe County), outside (geocoded, but not Buncombe), no-match, error.
  *
- * Fallback chain: Census first; if it can't match (common for rural Buncombe
- * roads without city context), fall back to Buncombe County's own
+ * Scope is decided by a REAL point-in-polygon boundary check against
+ * Buncombe County's GIS (lib/boundary.ts) — not a ZIP allowlist. The
+ * corrected BUNCOMBE_ZIPS list is the degraded-mode fallback when the county
+ * GIS is unreachable.
+ *
+ * Fallback chain: Census first; if it can't match or the geocoded point
+ * falls outside the county boundary (the same-name-different-county hazard,
+ * e.g. "Alexander" → Alexander County), fall back to Buncombe County's own
  * AccelaParcelAddress table, which resolves street+number and returns the
  * parcel point. This avoids the wrong-county pitfall of appending a bare
  * state ("287 New Salem Rd, NC" resolves to Statesville) and serves addresses
@@ -271,22 +298,68 @@ export async function geocodeAddress(raw: string): Promise<GeocodeResult> {
 
   const classified = classifyCensusResponse(data);
 
-  if (classified.status === "in-scope") {
-    // Census silently rewrites some street suffixes — live-confirmed: "70
-    // Woodfin Pl, Asheville" returns "70 WOODFIN ST, ASHEVILLE, NC, 28801"
-    // (the same tiger line and point as an explicit WOODFIN ST query), while
-    // the county's parcel records have 70 WOODFIN PL as a real parcel and no
-    // 70 WOODFIN ST. When the suffix differs from what the user typed,
-    // cross-check the user's street line in the county's authoritative parcel
-    // table and prefer that record when the user's version exists there.
-    const conflict = streetSuffixConflict(address, classified.matchedAddress ?? "");
-    if (conflict) {
+  // Boundary check: the county GIS decides in/out (authoritative, replaces the
+  // ZIP gate). Degraded mode — GIS unreachable → ZIP list decides.
+  const boundary = classified.matchedAddress
+    ? await isBuncombePoint(classified.latitude!, classified.longitude!)
+    : undefined;
+
+  if (boundary === "unavailable") {
+    // Degraded mode: the authoritative boundary is unreachable. Fall back to
+    // the corrected BUNCOMBE_ZIPS verdict for this match, then continue with
+    // the normal in-scope path (suffix conflict included). Honest and
+    // documented — never a guess, and never silent-if-wrong ZIPs.
+    return classifiedFromZips(address, classified);
+  }
+
+  const confl = classified.matchedAddress
+    ? streetSuffixConflict(address, classified.matchedAddress)
+    : null;
+
+  if (boundary === "in") {
+    // In-county is authoritative — even if the ZIP is missing/odd.
+    if (confl) {
       const county = await lookupCountyAddress(address);
       if (county) return county;
     }
     return classified;
   }
 
+  if (boundary === "out") {
+    // The Census point landed outside the county boundary — this is the
+    // ambiguity case (e.g. "Alexander" resolving to Alexander County, or a
+    // Fletcher address geocoded onto the Henderson side of the line). Before
+    // declaring "outside", rescue via the county's own parcel address table:
+    // a hit proves the address genuinely exists in Buncombe and returns the
+    // parcel point. Otherwise the point really is outside.
+    const county = await lookupCountyAddress(address);
+    if (county) return county;
+    return {
+      ...classified,
+      status: "outside",
+      message: `That address is in ${classified.city ?? "another area"}, ${
+        classified.state ?? "US"
+      } — outside Buncombe County. We only cover Buncombe County, NC.`,
+    };
+  }
+
+  // boundary === undefined (no coordinates to check) — fall back to ZIPs.
+  return classifiedFromZips(address, classified);
+}
+
+/**
+ * When the county boundary service is unreachable, decide from the corrected
+ * Buncombe ZIP allowlist (degraded mode). Runs the same suffix-conflict
+ * cross-check as the boundary-in path so a ZIP-favored match still prefers
+ * the county parcel record on a suffix rewrite.
+ *
+ * A Census no-match also lands here (no coordinates → no boundary verdict):
+ * try the county's own address table before giving up, exactly as before.
+ */
+async function classifiedFromZips(
+  address: string,
+  classified: Omit<GeocodeResult, "message">
+): Promise<GeocodeResult> {
   if (classified.status === "outside") {
     return {
       ...classified,
@@ -295,14 +368,21 @@ export async function geocodeAddress(raw: string): Promise<GeocodeResult> {
       } — outside Buncombe County. We only cover Buncombe County, NC.`,
     };
   }
-
-  // Attempt 2: Census no-matched — try Buncombe County's own address table.
-  const county = await lookupCountyAddress(address);
-  if (county) return county;
-
-  return {
-    status: "no-match",
-    message:
-      "We couldn't find that address. Check the street number and spelling, then try again.",
-  };
+  if (classified.status === "no-match") {
+    // Attempt 2: Census no-matched — try Buncombe County's own address table.
+    const county = await lookupCountyAddress(address);
+    if (county) return county;
+    return {
+      status: "no-match",
+      message:
+        "We couldn't find that address. Check the street number and spelling, then try again.",
+    };
+  }
+  const conflict = streetSuffixConflict(address, classified.matchedAddress ?? "");
+  if (conflict) {
+    const county = await lookupCountyAddress(address);
+    if (county) return county;
+  }
+  return classified;
 }
+

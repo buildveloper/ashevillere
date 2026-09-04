@@ -20,7 +20,7 @@ export const DATA_SOURCES: DataSource[] = [
     org: "U.S. Census Bureau",
     url: "https://geocoding.geo.census.gov",
     updated: "Continuously updated",
-    role: "Converts an address to coordinates and scopes lookups to Buncombe County (FIPS 37021) via ZIP-code classification.",
+    role: "Converts an address to coordinates. Scope is decided by a real point-in-polygon check against Buncombe County's GIS boundary (county FIPS 37021), with the county's parcel address table as the rescue when the geocoded point lands outside the boundary — not a ZIP-code guess.",
   },
   {
     name: "FEMA National Flood Hazard Layer",
