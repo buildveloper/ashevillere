@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import Hero from "@/components/Hero";
 import ThreePillars from "@/components/ThreePillars";
 import HowItWorks from "@/components/HowItWorks";
 import TrustSection from "@/components/TrustSection";
 import ProTeaser from "@/components/ProTeaser";
 import FAQ from "@/components/FAQ";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (

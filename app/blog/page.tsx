@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Blog — AshevilleRE",
   description:
     "Flood risk, STR rules, and Hurricane Helene recovery explainers for Buncombe County, NC — from free public records.",
+  alternates: { canonical: "/blog" },
 };
 
 type Filter = BlogCategory | "all";

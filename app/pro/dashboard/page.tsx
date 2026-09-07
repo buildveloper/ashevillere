@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: "Pro dashboard — AshevilleRE",
   description:
     "Market Interest, bulk lookups, CSV export, saved searches, and advanced filters for AshevilleRE Pro subscribers.",
+  alternates: { canonical: "/pro/dashboard" },
 };
 
 export const dynamic = "force-dynamic";

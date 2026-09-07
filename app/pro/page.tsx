@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Pro — AshevilleRE for professionals",
   description:
     "Bulk lookups, CSV export, saved searches, and advanced filters for agents, investors, insurers, and title companies in Buncombe County, NC. Launching later.",
+  alternates: { canonical: "/pro" },
 };
 
 const FEATURES = [

@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Methodology & sources — AshevilleRE",
   description:
     "Where AshevilleRE's data comes from, how classification works, and the official disclaimer for flood, STR, and recovery lookups in Buncombe County, NC.",
+  alternates: { canonical: "/methodology" },
 };
 
 export default function MethodologyPage() {
