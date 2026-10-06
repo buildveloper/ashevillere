@@ -58,10 +58,51 @@ const OTHER_TOWN_ZONING: Record<number, string> = {
   66: "Montreat",
 };
 
-/** Asheville zoning districts that are "resort" (where whole-home STR allowed). */
-const RESORT_DISTRICTS = new Set(["RES", "RSC", "RMX"]);
-/** Asheville zoning districts that are residential (where homestay may apply). */
-const RESIDENTIAL_DISTRICTS = new Set([
+/**
+ * Normalize a zoning district code for comparison.
+ *
+ * The Buncombe/Asheville GIS (layer 31, DISTRICTS) stores codes WITHOUT
+ * hyphens — "RS4", "RM16", "RS8" — while this rule set is written in the
+ * ordinance's hyphenated form ("RS-4", "RM-16"). Comparing the raw strings
+ * meant every hyphenated code silently never matched. Normalize BOTH sides
+ * (uppercase + strip every non-alphanumeric character) so "RS-4", "RS4" and
+ * "rs4" all compare equal. Audit result: RS-2/RS-4/RS-8/RM-6/RM-8/RM-16 were
+ * all affected, not just RS4.
+ */
+export function normalizeDistrict(code?: string | null): string {
+  return (code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+/** Build a normalized membership set from ordinance-form district codes. */
+function districtSet(codes: string[]): Set<string> {
+  return new Set(codes.map(normalizeDistrict));
+}
+
+/**
+ * Asheville zoning districts that are "resort" (where whole-home STR allowed).
+ *
+ * Updated to the real district codes found in the live City of Asheville
+ * zoning layer (ZoningDistricts FeatureServer/11, field `districts`): the two
+ * codes that exist are exactly "RESORT" and "RES EXP". The previous list
+ * ("RES", "RSC") matched nothing in the live data — a RESORT-zoned parcel
+ * was misreported as a prohibited zone. Codes are compared through
+ * normalizeDistrict(), so "RES EXP" and any hyphen/space variant all match.
+ * Note: the city's published STVR guidance names only the "Resort Zoning
+ * District"; RES EXP ("Residential Expansion") is included per the product
+ * owner's confirmed decision — verify with the city before relying on it.
+ */
+const RESORT_DISTRICTS = districtSet(["RESORT", "RES EXP"]);
+/**
+ * Asheville zoning districts that are residential (where homestay may apply).
+ *
+ * RMX (residential mixed-use) belongs HERE, not in RESORT_DISTRICTS. It is a
+ * residential district, so a whole-home STR is not permitted under the 2018
+ * ordinance and only an owner-occupied homestay applies. Listing it in both
+ * sets made an RMX parcel report as resort-eligible (whole-home STR "may be
+ * permitted") — a policy error — so RESORT_DISTRICTS is the non-authoritative
+ * list and RMX is removed from it. RESIDENTIAL_DISTRICTS is authoritative.
+ */
+const RESIDENTIAL_DISTRICTS = districtSet([
   "RS-2",
   "RS-4",
   "RS-8",
@@ -172,8 +213,9 @@ export function applyStrRules(input: {
   const { jurisdiction: jur, jurisdictionName: name, zoning: z, permitRegistry } = input;
 
   if (jur === "city") {
-    const isResort = RESORT_DISTRICTS.has(z ?? "");
-    const isResidential = RESIDENTIAL_DISTRICTS.has(z ?? "");
+    const code = normalizeDistrict(z);
+    const isResort = RESORT_DISTRICTS.has(code);
+    const isResidential = RESIDENTIAL_DISTRICTS.has(code);
     if (isResort) {
       parts.push(
         `Inside Asheville city limits (${name}), zoning ${z || "unknown"} — a resort district. Whole-home short-term rentals may be permitted here under the 2018 ordinance.`
