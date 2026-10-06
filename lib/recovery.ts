@@ -37,6 +37,8 @@
  *     record is not a guarantee of no damage, and this is stated on the panel.
  */
 
+import { fetchWithRetry, type ArcGisResponse } from "./arcgis";
+
 export type RecoveryStatus = "result" | "unavailable" | "error";
 
 export interface RecoveryResult {
@@ -64,34 +66,6 @@ const POST_HELENE_IMAGERY =
 const DISCLAIMER =
   "This is informational and reflects county records reported after Hurricane Helene (September 2024). It is not an official damage determination and does not replace verification with Buncombe County or your insurer.";
 
-/** Fetch with explicit timeout + retry once. Returns Response or null. */
-async function fetchWithRetry(
-  url: string,
-  timeoutMs = 10000
-): Promise<Response | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(timeoutMs),
-        headers: { Accept: "application/json" },
-      });
-      return res;
-    } catch {
-      if (attempt === 1) return null;
-    }
-  }
-  return null;
-}
-
-interface ArcGisFeature {
-  attributes?: Record<string, string | number | null>;
-}
-
-interface ArcGisResponse {
-  features?: ArcGisFeature[];
-  error?: { message?: string };
-}
-
 /** Query an ArcGIS layer/table for a URL. Returns parsed response or null. */
 async function query(
   url: string,
@@ -112,6 +86,108 @@ function sqlStr(value: string): string {
 }
 
 /**
+ * Street-suffix forms → one canonical abbreviation, so "STREET"/"ST",
+ * "BOULEVARD"/"BLVD", "AVENUE"/"AVE" etc. compare equal regardless of which
+ * form the Census canonicalizer or the county table happens to use.
+ */
+const SUFFIX_CANON: Record<string, string> = {
+  STREET: "ST", ST: "ST", AVENUE: "AVE", AVE: "AVE", AV: "AVE",
+  BOULEVARD: "BLVD", BLVD: "BLVD", ROAD: "RD", RD: "RD", DRIVE: "DR",
+  DR: "DR", LANE: "LN", LN: "LN", COURT: "CT", CT: "CT", CIRCLE: "CIR",
+  CIR: "CIR", PLACE: "PL", PL: "PL", HIGHWAY: "HWY", HWY: "HWY",
+  TRAIL: "TRL", TRL: "TRL", TERRACE: "TER", TER: "TER", PARKWAY: "PKWY",
+  PKWY: "PKWY", SQUARE: "SQ", SQ: "SQ", WAY: "WAY", LOOP: "LOOP",
+  PIKE: "PIKE", TURNPIKE: "TPKE", EXPRESSWAY: "EXPY", ALLEY: "ALY",
+};
+
+/** Compass directionals that may appear before the street name. */
+const DIRECTIONALS = new Set(["N", "S", "E", "W", "NE", "NW", "SE", "SW"]);
+
+export interface StreetSignature {
+  /** Leading house number (e.g. "48"). */
+  number: string;
+  /** Street name without the directional or suffix (e.g. "GRIFFING"). */
+  name: string;
+  /** Canonical suffix abbreviation, or "" when none. */
+  suffix: string;
+  /** Prefix directional ("S", "N", …), or "" when absent. */
+  directional: string;
+}
+
+/**
+ * Parse a full address into a comparable street signature, normalized so that
+ * formatting differences don't silently defeat the match:
+ *   "48 GRIFFING BLVD"        → { 48, GRIFFING, BLVD, "" }
+ *   "48 S GRIFFING BLVD #2"   → { 48, GRIFFING, BLVD, S }
+ *   "70 WOODFIN PL"           → { 70, WOODFIN, PL, "" }
+ * Returns null when there's no leading house number to key on.
+ */
+export function streetSignature(line: string): StreetSignature | null {
+  // Street line only; drop any unit designator ("#2", "APT 3").
+  const cleaned = (line.split(",")[0] ?? "")
+    .toUpperCase()
+    .replace(/#.*$/, "")
+    .replace(/\b(APT|UNIT|STE|SUITE)\b.*$/, "")
+    .replace(/[^A-Z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const tokens = cleaned.split(" ").filter(Boolean);
+  if (!tokens.length) return null;
+  const number = /^\d/.test(tokens[0]) ? tokens[0] : "";
+  if (!number) return null;
+  const rest = tokens.slice(1);
+  if (!rest.length) return null;
+
+  // A prefix directional only counts in the first position ("S GRIFFING");
+  // a trailing "S" would be a suffix, not a directional.
+  let directional = "";
+  if (rest.length > 1 && DIRECTIONALS.has(rest[0])) {
+    directional = rest[0];
+    rest.shift();
+  }
+  const suffix = rest.length > 1 ? SUFFIX_CANON[rest[rest.length - 1]] ?? "" : "";
+  const name = (suffix ? rest.slice(0, -1) : rest).join(" ");
+  return { number, name, suffix, directional };
+}
+
+/**
+ * Pick the county FullAddress that matches the target street signature.
+ *
+ * Handles the two real-world mismatches the county table exposes:
+ *  - hyphenation/abbreviation variance ("WOODFIN ST" vs "WOODFIN STREET"),
+ *    via canonical suffix comparison;
+ *  - a directional that Census omitted ("48 GRIFFING BLVD" from the user,
+ *    while the county stores "48 S GRIFFING BLVD").
+ *
+ * Returns the matching FullAddress, or null when nothing matches or the match
+ * is ambiguous (e.g. both "48 S …" and "48 N …" exist and the target has no
+ * directional) — never guesses between two different properties.
+ */
+export function matchCountyAddress(
+  target: StreetSignature,
+  candidates: string[]
+): string | null {
+  const core = candidates
+    .map((line) => ({ line, sig: streetSignature(line) }))
+    .filter(
+      (c) =>
+        c.sig !== null &&
+        c.sig.number === target.number &&
+        c.sig.name === target.name &&
+        c.sig.suffix === target.suffix
+    ) as Array<{ line: string; sig: StreetSignature }>;
+
+  if (!core.length) return null;
+  if (target.directional) {
+    return core.find((c) => c.sig.directional === target.directional)?.line ?? null;
+  }
+  // Target has no directional: accept only an unambiguous candidate.
+  if (core.length === 1) return core[0].line;
+  const noDirectional = core.filter((c) => !c.sig.directional);
+  return noDirectional[0]?.line ?? null;
+}
+
+/**
  * Resolve the parcel PIN for an address via the county's AccelaParcelAddress
  * table (FullAddress → ParcelNumber). The matched address is the Census
  * canonical form ("2 ROBERTS ST, ASHEVILLE, NC, 28801"); we try exact match
@@ -129,33 +205,60 @@ async function parcelByAddress(
   const street = matchedAddress.split(",")[0]?.trim().toUpperCase();
   if (!street) return null;
 
-  const attempts = [
-    // Exact "NUMBER STREET" prefix of the canonical address.
-    { field: "FullAddress", value: street, operator: "=" },
-    // Normalized contains-match on the street line (handles suffixes like
-    // "HWY", "RD" variants the county stores differently).
-    { field: "FullAddress", value: `${street}%`, operator: "LIKE" },
-  ] as const;
-
-  for (const { field, value, operator } of attempts) {
+  /** Run one address-table query, returning the ParcelNumber/FullAddress rows. */
+  const rowsFor = async (where: string) => {
     const url = new URL(`${ACCELA_ADDRESS_TABLE}/query`);
-    url.searchParams.set(
-      "where",
-      `UPPER(${field}) ${operator} '${sqlStr(value)}'`
-    );
+    url.searchParams.set("where", where);
     url.searchParams.set("returnGeometry", "false");
     url.searchParams.set("outFields", "ParcelNumber,FullAddress");
     url.searchParams.set("f", "json");
     const data = await query(url.toString());
-    const attrs = data?.features?.[0]?.attributes;
-    const pinnum = attrs ? String(attrs.ParcelNumber ?? "").trim() : "";
-    if (pinnum) {
-      return {
-        pinnum,
-        sourceName: "Buncombe Co. GIS (Accela address records)",
-        sourceUrl: "https://gis.buncombecounty.org",
-      };
+    return (data?.features ?? []).map((f) => ({
+      pinnum: String(f.attributes?.ParcelNumber ?? "").trim(),
+      full: String(f.attributes?.FullAddress ?? "").trim(),
+    }));
+  };
+
+  const found = (pinnum: string) =>
+    pinnum
+      ? {
+          pinnum,
+          sourceName: "Buncombe Co. GIS (Accela address records)",
+          sourceUrl: "https://gis.buncombecounty.org",
+        }
+      : null;
+
+  // Attempt 1: match on house number + street name, IGNORING directional and
+  // suffix formatting. The county table stores the raw situs form ("48 S
+  // GRIFFING BLVD"), which the Census canonical address ("48 GRIFFING BLVD")
+  // does not prefix-match — a plain 'FullAddress LIKE street%' misses it. The
+  // narrow number+name prefix returns the real candidates; the normalized
+  // signature then picks the exact one (suffix/ directional aware).
+  const sig = streetSignature(street);
+  if (sig) {
+    const rows = await rowsFor(
+      `UPPER(FullAddress) LIKE '${sqlStr(`${sig.number} %${sig.name}%`)}'`
+    );
+    const line = matchCountyAddress(
+      sig,
+      rows.map((r) => r.full)
+    );
+    if (line) {
+      const hit = rows.find((r) => r.full === line);
+      const result = found(hit?.pinnum ?? "");
+      if (result) return result;
     }
+  }
+
+  // Attempt 2: exact, then contains-match on the full street line. Kept as a
+  // fallback for lines the signature parser can't key on.
+  for (const where of [
+    `UPPER(FullAddress) = '${sqlStr(street)}'`,
+    `UPPER(FullAddress) LIKE '${sqlStr(`${street}%`)}'`,
+  ]) {
+    const rows = await rowsFor(where);
+    const result = found(rows[0]?.pinnum ?? "");
+    if (result) return result;
   }
   return null;
 }
@@ -194,7 +297,7 @@ async function damageForPin(
  * Light availability probe only (we do not render image tiles). Failures are
  * ignored — imagery is secondary to the checked damage signal.
  */
-async function imageryAvailable(lat: number, lon: number): Promise<boolean> {
+async function imageryAvailable(): Promise<boolean> {
   try {
     const url = new URL(`${POST_HELENE_IMAGERY}/info/`);
     url.searchParams.set("f", "json");
@@ -297,7 +400,7 @@ export async function lookupRecoveryContext(
   // 2) Check the county's Helene damage parcels dataset.
   const damage = await damageForPin(parcel.pinnum);
 
-  const imagery = await imageryAvailable(lat, lon);
+  const imagery = await imageryAvailable();
 
   const base = classifyDamageResponse(damage);
 

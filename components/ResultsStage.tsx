@@ -33,17 +33,8 @@ const SPECS: PanelSpec[] = [
   },
 ];
 
-// Citations are only rendered when real data was fetched for a panel.
-// The flood citation comes from the lookup payload (only present on a real
-// FEMA result); STR/Recovery have no citation until wired.
-const SOURCE_CITATIONS: Record<
-  "flood" | "str" | "recovery",
-  { label: string; url: string; lastUpdated: string } | null
-> = {
-  flood: null,
-  str: null,
-  recovery: null,
-};
+// Citations come from the lookup payload and are only present when real data
+// was fetched for that panel (all three panels are wired).
 const INITIAL: LookupResult = {
   flood: { key: "flood", status: "checking" },
   str: { key: "str", status: "checking" },
@@ -53,9 +44,9 @@ const INITIAL: LookupResult = {
 /**
  * ResultsStage — the product's payoff moment. Shows the geocoded address,
  * runs the three checks in parallel, and staggers the panels in as each
- * resolves. Panels always show a real result or an honest state.
- * Only the FLOOD panel is wired to real data (FEMA NFHL + LOMA/LOMR + NC
- * FRIS); STR and Recovery stay in their honest not-connected state.
+ * resolves. Panels always show a real result or an honest state. All three
+ * panels are wired to real data (FEMA NFHL / Buncombe zoning / Helene damage
+ * records); each shows its own source citation when a real fetch succeeded.
  */
 export default function ResultsStage({
   result,
@@ -129,9 +120,7 @@ export default function ResultsStage({
 
   // Site-wide outage banner: only show once the lookup has finished settling
   // (no panel still in "checking") AND at least one panel landed on
-  // "unavailable" or "error". "not-connected" is a known product state for
-  // sources that aren't wired yet — it does not signal an outage and is
-  // intentionally excluded.
+  // "unavailable" or "error" — i.e. a real upstream failure, not a spinner.
   const allResolved = (["flood", "str", "recovery"] as const).every(
     (k) => statusOf(k) !== "checking",
   );
@@ -175,7 +164,7 @@ export default function ResultsStage({
       <div className="grid gap-4 md:grid-cols-3">
         {SPECS.map((spec) => {
           const panel = lookup[spec.key];
-          const citation = panel?.source ?? SOURCE_CITATIONS[spec.key];
+          const citation = panel?.source;
           return (
             <div key={spec.key}>
               <ResultPanel

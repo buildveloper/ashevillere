@@ -22,6 +22,8 @@
  * retried once; failures degrade to `unavailable`, never to fake data.
  */
 
+import { fetchWithRetry, queryPoint, type ArcGisFeature } from "./arcgis";
+
 export type FloodStatus = "result" | "unavailable" | "error";
 
 export interface FloodResult {
@@ -76,25 +78,6 @@ const SFHA_ZONES = new Set(["A", "AE", "AH", "AO", "AR", "A99", "V", "VE"]);
 const DISCLAIMER =
   "This is informational and not a substitute for an official flood determination, elevation certificate, or insurance agent's assessment. Verify with FEMA and your insurer before relying on it.";
 
-/** Fetch with explicit timeout + retry once. Returns Response or null. */
-async function fetchWithRetry(
-  url: string,
-  timeoutMs = 10000
-): Promise<Response | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(timeoutMs),
-        headers: { Accept: "application/json" },
-      });
-      return res;
-    } catch {
-      if (attempt === 1) return null;
-    }
-  }
-  return null;
-}
-
 export function classifyZone(zone?: string): FloodResult {
   if (!zone) {
     return {
@@ -112,41 +95,6 @@ export function classifyZone(zone?: string): FloodResult {
     inSfha: SFHA_ZONES.has(zone),
     message: label,
   };
-}
-
-interface ArcGisFeature {
-  attributes?: Record<string, string | number | null>;
-}
-
-interface ArcGisResponse {
-  features?: ArcGisFeature[];
-  error?: { message?: string };
-}
-
-/** Query an ArcGIS layer for the feature at a point. */
-async function queryPoint(
-  base: string,
-  layerId: number,
-  lat: number,
-  lon: number,
-  outFields: string
-): Promise<ArcGisResponse | null> {
-  const url = new URL(`${base}/${layerId}/query`);
-  url.searchParams.set("geometry", `${lon},${lat}`);
-  url.searchParams.set("geometryType", "esriGeometryPoint");
-  url.searchParams.set("inSR", "4326");
-  url.searchParams.set("spatialRel", "esriSpatialRelIntersects");
-  url.searchParams.set("where", "1=1");
-  url.searchParams.set("outFields", outFields);
-  url.searchParams.set("returnGeometry", "false");
-  url.searchParams.set("f", "json");
-  const res = await fetchWithRetry(url.toString());
-  if (!res || !res.ok) return null;
-  try {
-    return (await res.json()) as ArcGisResponse;
-  } catch {
-    return null;
-  }
 }
 
 /**
