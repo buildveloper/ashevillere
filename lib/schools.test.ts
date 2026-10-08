@@ -4,15 +4,32 @@ import { buildSchoolMessage, SCHOOL_DISCLAIMER } from "./schools";
 describe("buildSchoolMessage", () => {
   it("lists every level the county record carries, verbatim", () => {
     const m = buildSchoolMessage({
-      description: "Buncombe County Schools",
-      elementary: "Sand Hill-Venable",
-      middle: "Enka Middle",
-      high: "Enka High",
+      descr: "W D WILLIAMS ELEM",
+      elementary: "W D WILLIAMS ELEM",
+      middle: "CHARLES D OWEN MIDDLE",
+      high: "CHARLES D OWEN HIGH",
     });
-    expect(m).toContain("Elementary — Sand Hill-Venable");
-    expect(m).toContain("Middle — Enka Middle");
-    expect(m).toContain("High — Enka High");
+    expect(m).toContain("Elementary — W D WILLIAMS ELEM");
+    expect(m).toContain("Middle — CHARLES D OWEN MIDDLE");
+    expect(m).toContain("High — CHARLES D OWEN HIGH");
     expect(m).toContain("Buncombe County Schools and Asheville City Schools");
+  });
+
+  it("reads the live mirror's lowercase descr field (city-hosted layer 8)", () => {
+    // Real record shape from the live mirror (2026-10-08):
+    // { descr: "ASHEVILLE CITY", elementary: "ASHEVILLE CITY",
+    //   intermediate: null, middle: "ASHEVILLE MIDDLE", high: "ASHEVILLE HIGH" }
+    const m = buildSchoolMessage({
+      descr: "ASHEVILLE CITY",
+      elementary: "ASHEVILLE CITY",
+      intermediate: null,
+      middle: "ASHEVILLE MIDDLE",
+      high: "ASHEVILLE HIGH",
+    });
+    expect(m).toContain("District record: ASHEVILLE CITY");
+    expect(m).toContain("Middle — ASHEVILLE MIDDLE");
+    expect(m).toContain("High — ASHEVILLE HIGH");
+    expect(m).not.toContain("Intermediate");
   });
 
   it("includes the intermediate school when the record has one", () => {
@@ -27,7 +44,7 @@ describe("buildSchoolMessage", () => {
 
   it("shows blanks as a data gap, never an inferred assignment", () => {
     const m = buildSchoolMessage({
-      description: "Buncombe County Schools",
+      descr: "W D WILLIAMS ELEM",
       elementary: "",
       middle: null,
       high: undefined,
@@ -47,12 +64,12 @@ describe("buildSchoolMessage", () => {
 
   it("uses the record description verbatim", () => {
     const m = buildSchoolMessage({
-      description: "Asheville City Schools",
+      descr: "ASHEVILLE CITY",
       elementary: "Claxton",
       middle: "Asheville Middle",
       high: "Asheville High",
     });
-    expect(m).toContain("District record: Asheville City Schools");
+    expect(m).toContain("District record: ASHEVILLE CITY");
   });
 });
 

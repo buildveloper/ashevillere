@@ -66,12 +66,13 @@ export default function MethodologyPage() {
         </li>
         <li>
           <span className="font-mono text-[11px] text-contour">05</span> — Schools
-          checks the point against Buncombe County&apos;s public School District
-          Boundaries GIS layer (county item owner GISAdminBC), which carries
-          both Buncombe County Schools and Asheville City Schools assignments
-          (elementary, intermediate, middle, high). Attendance zones change —
-          always verify with the school district directly before relying on a
-          result for a decision.
+          checks the point against the county school-district boundaries GIS
+          layer (the county dataset, served via the City of Asheville&apos;s
+          public GIS mirror while the county&apos;s own copy is down), which
+          carries both Buncombe County Schools and Asheville City Schools
+          assignments (elementary, intermediate, middle, high). Attendance
+          zones change — always verify with the school district directly
+          before relying on a result for a decision.
         </li>
       </ul>
 

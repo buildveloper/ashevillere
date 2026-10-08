@@ -1,15 +1,22 @@
 /**
- * School attendance-zone lookup — Buncombe County GIS.
+ * School attendance-zone lookup — Buncombe County school-district boundaries.
  *
- * Source: "Buncombe County School District Boundaries" (public open-data
- * feature service, county item owner GISAdminBC):
- *   https://gis.buncombecounty.org/arcgis/rest/services/opendata_2/FeatureServer/6
- * The county's own dataset description: "the boundaries of the public school
- * districts in Buncombe County. It used [is used to] determine school
- * attendance assignments for elementary school, middle school and high school.
- * Information is available for both Buncombe County and City of Asheville
- * Schools." Layer fields (verified against the county layer definition):
- *   ObjectId | Description | Elementary | High | Intermediate | Middle
+ * Source: "Buncombe County School Districts" (layer 8 of the
+ * Boundaries/BuncombeCountySchoolDistricts service), the county dataset
+ * mirrored on the City of Asheville's public GIS host:
+ *   https://gis.ashevillenc.gov/server/rest/services/Boundaries/BuncombeCountySchoolDistricts/FeatureServer/8
+ * Layer fields (verified live against the layer definition 2026-10-08):
+ *   objectid | descr | elementary | intermediate | middle | high
+ * (Note: `descr`, not the old county layer's `Description`.)
+ *
+ * Why the city host: the county's own copy
+ * (gis.buncombecounty.org .../opendata_2/FeatureServer/6) returns HTTP 500
+ * "featureserver not found" from every network tried (2026-10-08) — the
+ * county's on-prem service is down, not renamed. The city-hosted mirror
+ * serves the same county dataset (renderer breaks out ASHEVILLE CITY plus
+ * every county elementary zone) and answers point queries with real
+ * assignments. If the county service recovers, prefer it; until then this
+ * is the working public source.
  *
  * Same honesty contract as the flood/STR/recovery panels: a real result only
  * after a successful fetch; an explicit unavailable state otherwise; never a
@@ -35,9 +42,9 @@ export interface SchoolResult {
 }
 
 const BUNCOMBE_ROOT =
-  "https://gis.buncombecounty.org/arcgis/rest/services/opendata_2/FeatureServer";
-const SCHOOL_DISTRICTS_LAYER = 6;
-const OUT_FIELDS = "Description,Elementary,Intermediate,Middle,High";
+  "https://gis.ashevillenc.gov/server/rest/services/Boundaries/BuncombeCountySchoolDistricts/FeatureServer";
+const SCHOOL_DISTRICTS_LAYER = 8;
+const OUT_FIELDS = "descr,elementary,intermediate,middle,high";
 
 export const SCHOOL_DISCLAIMER =
   "Attendance zones change — verify with the school district directly before relying on this for a decision. The county's own School District Mapping page instructs users to obtain official verification through Buncombe County Schools.";
@@ -51,6 +58,7 @@ const clean = (v: string | number | null | undefined): string =>
  * levels the record leaves blank are shown as blank, never inferred.
  */
 export function buildSchoolMessage(attrs: {
+  descr?: string | number | null;
   description?: string | number | null;
   elementary?: string | number | null;
   intermediate?: string | number | null;
@@ -68,7 +76,7 @@ export function buildSchoolMessage(attrs: {
     .filter(([, v]) => v !== "")
     .map(([k, v]) => `${k} — ${v}`);
 
-  const desc = clean(attrs.description);
+  const desc = clean(attrs.descr ?? attrs.description);
   if (parts.length === 0) {
     // Real polygon, but the record carries no school names: say exactly that.
     return (
@@ -113,9 +121,9 @@ export async function lookupSchoolZone(
       message:
         "The county's school-district boundary layer shows no attendance-zone polygon at this point — a data gap, not an absence of schools. Verify directly with the school district.",
       source: {
-        label: "Buncombe Co. GIS — School District Boundaries",
-        url: "https://gis.buncombecounty.org/arcgis/rest/services/opendata_2/FeatureServer/6",
-        lastUpdated: "County open-data layer",
+        label: "Buncombe Co. School Districts (city-hosted county mirror)",
+        url: "https://gis.ashevillenc.gov/server/rest/services/Boundaries/BuncombeCountySchoolDistricts/FeatureServer/8",
+        lastUpdated: "County dataset via City of Asheville GIS",
       },
       disclaimer: SCHOOL_DISCLAIMER,
     };
@@ -125,9 +133,9 @@ export async function lookupSchoolZone(
     status: "result",
     message: buildSchoolMessage(attrs),
     source: {
-      label: "Buncombe Co. GIS — School District Boundaries",
-      url: "https://gis.buncombecounty.org/arcgis/rest/services/opendata_2/FeatureServer/6",
-      lastUpdated: "County open-data layer",
+      label: "Buncombe Co. School Districts (city-hosted county mirror)",
+      url: "https://gis.ashevillenc.gov/server/rest/services/Boundaries/BuncombeCountySchoolDistricts/FeatureServer/8",
+      lastUpdated: "County dataset via City of Asheville GIS",
     },
     disclaimer: SCHOOL_DISCLAIMER,
   };
