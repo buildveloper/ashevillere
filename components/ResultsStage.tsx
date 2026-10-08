@@ -31,22 +31,32 @@ const SPECS: PanelSpec[] = [
     accent: "clay",
     officialSourceUrl: "https://data.buncombenc.gov/",
   },
+  {
+    key: "schools",
+    eyebrow: "SCHOOLS",
+    title: "School assignment",
+    detail: "Buncombe County school-district boundaries",
+    accent: "river",
+    officialSourceUrl: "https://gis.buncombenc.gov/schools/",
+  },
 ];
 
 // Citations come from the lookup payload and are only present when real data
-// was fetched for that panel (all three panels are wired).
+// was fetched for that panel (all four panels are wired).
 const INITIAL: LookupResult = {
   flood: { key: "flood", status: "checking" },
   str: { key: "str", status: "checking" },
   recovery: { key: "recovery", status: "checking" },
+  schools: { key: "schools", status: "checking" },
 };
 
 /**
  * ResultsStage — the product's payoff moment. Shows the geocoded address,
- * runs the three checks in parallel, and staggers the panels in as each
- * resolves. Panels always show a real result or an honest state. All three
+ * runs the four checks in parallel, and staggers the panels in as each
+ * resolves. Panels always show a real result or an honest state. All four
  * panels are wired to real data (FEMA NFHL / Buncombe zoning / Helene damage
- * records); each shows its own source citation when a real fetch succeeded.
+ * records / school-district boundaries); each shows its own source citation
+ * when a real fetch succeeded.
  */
 export default function ResultsStage({
   result,
@@ -56,7 +66,7 @@ export default function ResultsStage({
   const [lookup, setLookup] = useState<LookupResult>(INITIAL);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Kick off the three checks when the geocode result arrives.
+  // Kick off the four checks when the geocode result arrives.
   useEffect(() => {
     if (!result.latitude || !result.longitude) return;
     let cancelled = false;
@@ -115,16 +125,16 @@ export default function ResultsStage({
     };
   }, [result]);
 
-  const statusOf = (key: "flood" | "str" | "recovery"): PanelStatus =>
+  const statusOf = (key: "flood" | "str" | "recovery" | "schools"): PanelStatus =>
     lookup[key]?.status ?? "checking";
 
   // Site-wide outage banner: only show once the lookup has finished settling
   // (no panel still in "checking") AND at least one panel landed on
   // "unavailable" or "error" — i.e. a real upstream failure, not a spinner.
-  const allResolved = (["flood", "str", "recovery"] as const).every(
+  const allResolved = (["flood", "str", "recovery", "schools"] as const).every(
     (k) => statusOf(k) !== "checking",
   );
-  const anyOutage = (["flood", "str", "recovery"] as const).some(
+  const anyOutage = (["flood", "str", "recovery", "schools"] as const).some(
     (k) => statusOf(k) === "unavailable" || statusOf(k) === "error",
   );
   const showOutageBanner = allResolved && anyOutage;
@@ -161,7 +171,7 @@ export default function ResultsStage({
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {SPECS.map((spec) => {
           const panel = lookup[spec.key];
           const citation = panel?.source;

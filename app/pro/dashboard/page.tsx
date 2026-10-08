@@ -24,7 +24,7 @@ const WINDOWS = [7, 30, 90];
 const FEATURES = [
   {
     title: "Market Interest",
-    body: "Live, anonymous lookup trends — which ZIPs people are checking right now and what the three panels are returning.",
+    body: "Live, anonymous lookup trends — which ZIPs people are checking right now and what the four panels are returning.",
     live: true,
     href: "#market-interest",
   },

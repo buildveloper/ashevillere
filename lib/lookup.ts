@@ -9,6 +9,7 @@
 import { lookupFloodZone, type FloodResult } from "./flood";
 import { lookupStrEligibility, type StrResult } from "./str";
 import { lookupRecoveryContext, type RecoveryResult } from "./recovery";
+import { lookupSchoolZone, type SchoolResult } from "./schools";
 
 export interface LookupContext {
   latitude: number;
@@ -22,7 +23,7 @@ export interface LookupContext {
 export type PanelStatus = "checking" | "result" | "not-connected" | "unavailable" | "error";
 
 export interface LookupPanelResult {
-  key: "flood" | "str" | "recovery";
+  key: "flood" | "str" | "recovery" | "schools";
   status: PanelStatus;
   /** Human-readable summary for the panel body. */
   message?: string;
@@ -46,6 +47,7 @@ export interface LookupResult {
   flood: LookupPanelResult;
   str: LookupPanelResult;
   recovery: LookupPanelResult;
+  schools: LookupPanelResult;
 }
 
 /**
@@ -61,17 +63,19 @@ export function lookupFailurePanels(
     flood: { key: "flood", status: "unavailable", message },
     str: { key: "str", status: "unavailable", message },
     recovery: { key: "recovery", status: "unavailable", message },
+    schools: { key: "schools", status: "unavailable", message },
   };
 }
 
 export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
-  // Run all three checks in parallel — they are independent.
-  const [flood, str, recovery] = await Promise.all([
+  // Run all four checks in parallel — they are independent.
+  const [flood, str, recovery, schools] = await Promise.all([
     runFlood(ctx),
     runStr(ctx),
     runRecovery(ctx),
+    runSchools(ctx),
   ]);
-  return { flood, str, recovery };
+  return { flood, str, recovery, schools };
 }
 
 /** Flood panel: call the flood module directly, map to the panel shape. */
@@ -189,6 +193,36 @@ async function runRecovery(ctx: LookupContext): Promise<LookupPanelResult> {
       status: "unavailable",
       message:
         "Buncombe County's Helene damage records are temporarily unreachable. We're not showing guessed data — check the county's open data portal.",
+    };
+  }
+}
+
+/** Schools panel: call the schools module directly (in-process, parallel). */
+async function runSchools(ctx: LookupContext): Promise<LookupPanelResult> {
+  try {
+    const r: SchoolResult = await lookupSchoolZone(ctx.latitude, ctx.longitude);
+    if (r.status === "result" && r.message) {
+      return {
+        key: "schools",
+        status: "result",
+        message: r.message,
+        source: r.source,
+        disclaimer: r.disclaimer,
+      };
+    }
+    return {
+      key: "schools",
+      status: "unavailable",
+      message:
+        r.message ??
+        "Buncombe County's school-district boundaries service is temporarily unreachable. We're not showing guessed data — verify with the school district directly.",
+    };
+  } catch {
+    return {
+      key: "schools",
+      status: "unavailable",
+      message:
+        "Buncombe County's school-district boundaries service is temporarily unreachable. We're not showing guessed data — verify with the school district directly.",
     };
   }
 }

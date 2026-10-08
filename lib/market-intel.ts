@@ -2,7 +2,7 @@
  * Market Interest — anonymous, aggregate lookup activity for Pro subscribers.
  *
  * Every completed public lookup is logged with only non-identifying
- * dimensions: ZIP area, timestamp, which of the three panels returned a real
+ * dimensions: ZIP area, timestamp, which of the four panels returned a real
  * result, and (when relevant) the flood-zone or STR-jurisdiction category.
  * No street address, no coordinates, no IP, no user identity — see the
  * methodology page's privacy disclosure.

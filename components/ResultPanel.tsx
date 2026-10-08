@@ -3,7 +3,7 @@
 import type { LookupPanelResult } from "@/lib/lookup";
 
 export interface PanelSpec {
-  key: "flood" | "str" | "recovery";
+  key: "flood" | "str" | "recovery" | "schools";
   eyebrow: string;
   title: string;
   detail: string;

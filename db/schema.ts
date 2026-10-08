@@ -116,7 +116,7 @@ export const proSubscriptions = sqliteTable("pro_subscriptions", {
 /*
  * One row per completed public lookup, storing ONLY non-identifying
  * dimensions for aggregate reporting: ZIP area, timestamp, which of the
- * three panels returned a real result, and the flood-zone / STR-jurisdiction
+ * four panels returned a real result, and the flood-zone / STR-jurisdiction
  * category when relevant. No street address, no coordinates, no IP, no
  * identity — see the methodology page's privacy disclosure. Populated
  * best-effort by lib/lookup-log.ts; never queried on the public path.

@@ -48,9 +48,13 @@ export default function MethodologyPage() {
           (AE, AO, X, …) determines the flood-risk summary and insurance note.
         </li>
         <li>
-          <span className="font-mono text-[11px] text-contour">03</span> — ZIP and
-          jurisdiction classify city-vs-county STR rules. Parcel-level zoning
-          determination is being wired to the county GIS (Phase 5).
+          <span className="font-mono text-[11px] text-contour">03</span> — The
+          coordinate is checked against the county&apos;s Cities-and-Towns GIS
+          layer for jurisdiction (Asheville city limits vs. unincorporated
+          county vs. other town) and the city/county zoning layers for the
+          zoning district. City STR rules follow the 2018 ordinance
+          (whole-home STRs only in resort districts); the permit registry is
+          only surfaced when it exists and is reliably structured.
         </li>
         <li>
           <span className="font-mono text-[11px] text-contour">04</span> — Recovery
@@ -59,6 +63,15 @@ export default function MethodologyPage() {
           reported to the county, not a guarantee. Per-address building-permit
           records are not published as a public queryable API, so permit
           activity is never invented.
+        </li>
+        <li>
+          <span className="font-mono text-[11px] text-contour">05</span> — Schools
+          checks the point against Buncombe County&apos;s public School District
+          Boundaries GIS layer (county item owner GISAdminBC), which carries
+          both Buncombe County Schools and Asheville City Schools assignments
+          (elementary, intermediate, middle, high). Attendance zones change —
+          always verify with the school district directly before relying on a
+          result for a decision.
         </li>
       </ul>
 
@@ -69,7 +82,7 @@ export default function MethodologyPage() {
         <p>
           Every completed address lookup is logged anonymously. We keep only
           the non-identifying basics: the ZIP code area, when the lookup
-          happened, which of the three panels (flood, STR, recovery) returned a
+          happened, which of the four panels (flood, STR, recovery, schools) returned a
           result, and the flood-zone or STR-jurisdiction category when one was
           returned. We never store your street address, your exact coordinates,
           your name, your email, or your IP address with this activity — nothing

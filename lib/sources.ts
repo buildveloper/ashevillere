@@ -44,6 +44,20 @@ export const DATA_SOURCES: DataSource[] = [
     role: "Zoning districts, parcels, effective DFIRM/FRIS flood layers, and Accela address/damage records. STR eligibility depends on whether a property is inside Asheville city limits (2018 ordinance) or county jurisdiction.",
   },
   {
+    name: "Buncombe Co. GIS — School District Boundaries",
+    org: "Buncombe County, NC (county open data, item owner GISAdminBC)",
+    url: "https://gis.buncombecounty.org/arcgis/rest/services/opendata_2/FeatureServer/6",
+    updated: "County open-data layer",
+    role: "Public school-district boundary polygons carrying both Buncombe County Schools and Asheville City Schools attendance assignments (elementary, intermediate, middle, high). Attendance zones change — results point users to verify with the school district directly.",
+  },
+  {
+    name: "Buncombe County GIS — School District Mapping",
+    org: "Buncombe County, NC",
+    url: "https://gis.buncombenc.gov/schools/",
+    updated: "County-maintained",
+    role: "The county's own School District Mapping lookup page — the official cross-check link shown on the schools panel. The county instructs users to obtain official verification directly through Buncombe County Schools.",
+  },
+  {
     name: "Buncombe County open data — Helene damage parcels",
     org: "Buncombe County, NC",
     url: "https://data.buncombenc.gov/",

@@ -50,7 +50,7 @@ export default function MarketInterestSection({
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-secondary">
             Anonymous, aggregate activity from the free public lookup: which
-            ZIPs are being looked up, how often, and what the three panels
+            ZIPs are being looked up, how often, and what the four panels
             return. No addresses, no identities, no IPs — see the{" "}
             <Link
               href="/methodology"

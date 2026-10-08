@@ -27,6 +27,11 @@ const result: LookupResult = {
     value: "damage-reported",
     message: "Record found.",
   },
+  schools: {
+    key: "schools",
+    status: "result",
+    message: "Assignment on record.",
+  },
 };
 
 describe("buildLookupEventRow", () => {
@@ -56,6 +61,7 @@ describe("buildLookupEventRow", () => {
         flood: { key: "flood", status: "unavailable", message: "Down." },
         str: { key: "str", status: "unavailable", message: "Down." },
         recovery: { key: "recovery", status: "unavailable", message: "Down." },
+        schools: { key: "schools", status: "unavailable", message: "Down." },
       }
     );
     expect(row.zip).toBeNull();
@@ -76,6 +82,7 @@ describe("buildLookupEventRow", () => {
         message: "x",
       },
       recovery: result.recovery,
+      schools: result.schools,
     });
     expect(row.str).toBe(true);
     expect(row.strJurisdiction).toBeNull();
