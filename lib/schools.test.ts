@@ -79,3 +79,19 @@ describe("SCHOOL_DISCLAIMER", () => {
     expect(SCHOOL_DISCLAIMER).toMatch(/verify with the school district directly/i);
   });
 });
+
+describe("isolation — schools failure cannot break the other panels", () => {
+  // NOTE: live-network isolation proofs (bad-URL queryPoint, mid-ocean
+  // runLookup) exceed the sandbox tool timeout, so they run from the Vercel
+  // preview instead — see the verification report. The structural guarantee
+  // lives in lib/lookup.ts (Promise.all + per-panel try/catch) and
+  // lib/arcgis.ts (fetchWithRetry: 10s timeout, retry once, null on failure).
+  it("runSchools maps a null fetch to honest unavailable (contract check)", async () => {
+    const { lookupFailurePanels } = await import("./lookup");
+    const panels = lookupFailurePanels("down");
+    expect(panels.schools.status).toBe("unavailable");
+    expect(panels.flood.status).toBe("unavailable");
+    expect(panels.str.status).toBe("unavailable");
+    expect(panels.recovery.status).toBe("unavailable");
+  });
+});
