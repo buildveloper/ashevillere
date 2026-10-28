@@ -59,10 +59,10 @@ describe("withDeadline", () => {
     expect(result).toBe("fallback");
   });
 
-  it("keeps schools at 3s and every other panel at 3.5s", () => {
+  it("keeps schools at 3s and every other panel at 6.5s", () => {
     expect(PANEL_TIMEOUT_MS.schools).toBe(3000);
-    expect(PANEL_TIMEOUT_MS.flood).toBe(3500);
-    expect(PANEL_TIMEOUT_MS.str).toBe(3500);
-    expect(PANEL_TIMEOUT_MS.recovery).toBe(3500);
+    expect(PANEL_TIMEOUT_MS.flood).toBe(6500);
+    expect(PANEL_TIMEOUT_MS.str).toBe(6500);
+    expect(PANEL_TIMEOUT_MS.recovery).toBe(6500);
   });
 });

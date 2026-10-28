@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { runLookup, type LookupContext } from "@/lib/lookup";
+import { after, NextRequest, NextResponse } from "next/server";
+import { runLookupTimed, type LookupContext } from "@/lib/lookup";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { logLookupEvent } from "@/lib/lookup-log";
 
@@ -30,15 +30,19 @@ export async function GET(req: NextRequest) {
     city: req.nextUrl.searchParams.get("city") ?? undefined,
     address: req.nextUrl.searchParams.get("address") ?? undefined,
   };
-  const result = await runLookup(ctx);
+  const { result, timings } = await runLookupTimed(ctx);
 
-  // Anonymous aggregate logging — best-effort and time-boxed so telemetry can
-  // never block or slow the free consumer lookup (lib/lookup-log.ts). The
-  // response below is identical to what the tool already returns.
-  await Promise.race([
-    logLookupEvent(ctx, result),
-    new Promise<void>((resolve) => setTimeout(resolve, 2000)),
-  ]);
+  // Anonymous aggregate logging runs after the response is sent (Next `after`
+  // → Vercel `waitUntil`), so it can never delay or block the lookup response.
+  // logLookupEvent catches its own failures; telemetry is never a dependency.
+  after(() => logLookupEvent(ctx, result));
 
-  return NextResponse.json(result);
+  return NextResponse.json(result, {
+    headers: {
+      // Server-measured panel durations, for preview/production diagnostics.
+      // The JSON payload is unchanged.
+      "Server-Timing": `flood;dur=${timings.flood}, str;dur=${timings.str}, recovery;dur=${timings.recovery}, schools;dur=${timings.schools}, total;dur=${timings.total}`,
+      "X-Lookup-Timings": `flood=${timings.flood};str=${timings.str};recovery=${timings.recovery};schools=${timings.schools};total=${timings.total}`,
+    },
+  });
 }

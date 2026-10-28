@@ -9,6 +9,7 @@
         "start": "next start",
         "lint": "eslint",
         "test": "vitest run",
+        "indexnow": "node scripts/indexnow.mjs",
         "db:generate": "drizzle-kit generate",
         "db:migrate": "node scripts/apply-db.mjs",
         "db:push": "drizzle-kit push",

@@ -68,18 +68,22 @@ export function lookupFailurePanels(
 }
 
 /**
- * Per-panel deadlines. The route awaits the anonymous log for up to 2s after
- * these resolve, so 3.5s here keeps the worst-case response under 6s.
- * Schools gets 3s and no retry at the source (lib/schools.ts).
+ * Per-panel ceilings. Flood/STR/recovery are set from preview measurements
+ * across city, county, and other-town addresses; 6.5s leaves headroom under
+ * the 10s function limit for the post-response log. Schools keeps a 3s
+ * single-attempt cap at the source (lib/schools.ts).
  */
 export const PANEL_TIMEOUT_MS = {
-  flood: 3500,
-  str: 3500,
-  recovery: 3500,
+  flood: 6500,
+  str: 6500,
+  recovery: 6500,
   schools: 3000,
 } as const;
 
 export type PanelKey = "flood" | "str" | "recovery" | "schools";
+
+/** Server-measured wall time per panel, plus the parallel total. */
+export type PanelTimings = Record<PanelKey, number> & { total: number };
 
 /** Honest terminal state for a panel that exceeded its deadline. */
 function panelUnavailable(key: PanelKey): LookupPanelResult {
@@ -114,12 +118,25 @@ export function withDeadline<T>(
 }
 
 export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
+  const { result } = await runLookupTimed(ctx);
+  return result;
+}
+
+/**
+ * Same lookup, plus server-measured per-panel durations. The route exposes
+ * these as response headers (Server-Timing / X-Lookup-Timings); the JSON
+ * payload itself is unchanged.
+ */
+export async function runLookupTimed(
+  ctx: LookupContext
+): Promise<{ result: LookupResult; timings: PanelTimings }> {
   const started = performance.now();
-  const timings: Record<PanelKey, number> = {
+  const timings: PanelTimings = {
     flood: 0,
     str: 0,
     recovery: 0,
     schools: 0,
+    total: 0,
   };
 
   const runPanel = async (
@@ -147,13 +164,13 @@ export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
   ]);
 
   const result = { flood, str, recovery, schools };
+  timings.total = Math.round(performance.now() - started);
 
   // Server-side measurement only — nothing is added to the public payload.
   console.info(
     "[lookup-timing]",
     JSON.stringify({
       ...timings,
-      total: Math.round(performance.now() - started),
       statuses: {
         flood: flood.status,
         str: str.status,
@@ -163,7 +180,7 @@ export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
     })
   );
 
-  return result;
+  return { result, timings };
 }
 
 /** Flood panel: call the flood module directly, map to the panel shape. */
