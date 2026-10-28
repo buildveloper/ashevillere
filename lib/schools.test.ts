@@ -4,32 +4,31 @@ import { buildSchoolMessage, SCHOOL_DISCLAIMER } from "./schools";
 describe("buildSchoolMessage", () => {
   it("lists every level the county record carries, verbatim", () => {
     const m = buildSchoolMessage({
-      descr: "W D WILLIAMS ELEM",
       elementary: "W D WILLIAMS ELEM",
+      intermediate: "ASHEVILLE INTERMEDIATE",
       middle: "CHARLES D OWEN MIDDLE",
       high: "CHARLES D OWEN HIGH",
     });
     expect(m).toContain("Elementary — W D WILLIAMS ELEM");
+    expect(m).toContain("Intermediate — ASHEVILLE INTERMEDIATE");
     expect(m).toContain("Middle — CHARLES D OWEN MIDDLE");
     expect(m).toContain("High — CHARLES D OWEN HIGH");
-    expect(m).toContain("Buncombe County Schools and Asheville City Schools");
   });
 
-  it("reads the live mirror's lowercase descr field (city-hosted layer 8)", () => {
+  it("reads the live mirror's record without printing the district type", () => {
     // Real record shape from the live mirror (2026-10-08):
     // { descr: "ASHEVILLE CITY", elementary: "ASHEVILLE CITY",
     //   intermediate: null, middle: "ASHEVILLE MIDDLE", high: "ASHEVILLE HIGH" }
     const m = buildSchoolMessage({
-      descr: "ASHEVILLE CITY",
       elementary: "ASHEVILLE CITY",
       intermediate: null,
       middle: "ASHEVILLE MIDDLE",
       high: "ASHEVILLE HIGH",
     });
-    expect(m).toContain("District record: ASHEVILLE CITY");
     expect(m).toContain("Middle — ASHEVILLE MIDDLE");
     expect(m).toContain("High — ASHEVILLE HIGH");
     expect(m).not.toContain("Intermediate");
+    expect(m).not.toContain("District record");
   });
 
   it("includes the intermediate school when the record has one", () => {
@@ -44,7 +43,6 @@ describe("buildSchoolMessage", () => {
 
   it("shows blanks as a data gap, never an inferred assignment", () => {
     const m = buildSchoolMessage({
-      descr: "W D WILLIAMS ELEM",
       elementary: "",
       middle: null,
       high: undefined,
@@ -62,14 +60,13 @@ describe("buildSchoolMessage", () => {
     expect(m).not.toContain("Intermediate");
   });
 
-  it("uses the record description verbatim", () => {
+  it("never prints the removed District record sentence", () => {
     const m = buildSchoolMessage({
-      descr: "ASHEVILLE CITY",
       elementary: "Claxton",
       middle: "Asheville Middle",
       high: "Asheville High",
     });
-    expect(m).toContain("District record: ASHEVILLE CITY");
+    expect(m).not.toContain("District record");
   });
 });
 
@@ -78,14 +75,19 @@ describe("SCHOOL_DISCLAIMER", () => {
     expect(SCHOOL_DISCLAIMER).toMatch(/Attendance zones change/i);
     expect(SCHOOL_DISCLAIMER).toMatch(/verify with the school district directly/i);
   });
+
+  it("discloses that the layer is a city-hosted mirror of the county dataset", () => {
+    expect(SCHOOL_DISCLAIMER).toMatch(/City of Asheville/i);
+    expect(SCHOOL_DISCLAIMER).toMatch(/mirror of Buncombe County/i);
+  });
 });
 
 describe("isolation — schools failure cannot break the other panels", () => {
   // NOTE: live-network isolation proofs (bad-URL queryPoint, mid-ocean
   // runLookup) exceed the sandbox tool timeout, so they run from the Vercel
   // preview instead — see the verification report. The structural guarantee
-  // lives in lib/lookup.ts (Promise.all + per-panel try/catch) and
-  // lib/arcgis.ts (fetchWithRetry: 10s timeout, retry once, null on failure).
+  // lives in lib/lookup.ts (Promise.all + per-panel try/catch + withDeadline)
+  // and lib/arcgis.ts (fetchWithRetry: null on failure).
   it("runSchools maps a null fetch to honest unavailable (contract check)", async () => {
     const { lookupFailurePanels } = await import("./lookup");
     const panels = lookupFailurePanels("down");

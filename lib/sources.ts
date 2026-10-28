@@ -47,7 +47,7 @@ export const DATA_SOURCES: DataSource[] = [
     name: "Buncombe Co. School Districts (city-hosted county mirror)",
     org: "Buncombe County dataset via City of Asheville GIS",
     url: "https://gis.ashevillenc.gov/server/rest/services/Boundaries/BuncombeCountySchoolDistricts/FeatureServer/8",
-    updated: "County dataset via City of Asheville GIS",
+    updated: "No edit date published by the City of Asheville mirror",
     role: "County school-district boundary polygons carrying both Buncombe County Schools and Asheville City Schools attendance assignments (elementary, intermediate, middle, high). The county's own copy is down (HTTP 500, 2026-10-08); this city-hosted mirror serves the same dataset. Attendance zones change — results point users to verify with the school district directly.",
   },
   {

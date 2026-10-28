@@ -9,12 +9,18 @@
  * and the Buncombe boundary gate (lib/boundary.ts).
  */
 
-/** Fetch with explicit timeout + retry once. Returns Response or null. */
+/**
+ * Fetch with explicit timeout and a caller-controlled attempt count.
+ * Returns the Response (even non-ok) or null once every attempt has failed.
+ * `attempts = 1` disables the retry — used by the schools panel, which is
+ * capped at a single 3s call.
+ */
 export async function fetchWithRetry(
   url: string,
-  timeoutMs = 10000
+  timeoutMs = 10000,
+  attempts = 2
 ): Promise<Response | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const res = await fetch(url, {
         signal: AbortSignal.timeout(timeoutMs),
@@ -22,7 +28,7 @@ export async function fetchWithRetry(
       });
       return res;
     } catch {
-      if (attempt === 1) return null;
+      if (attempt === attempts - 1) return null;
     }
   }
   return null;
@@ -48,7 +54,8 @@ export async function queryPoint(
   lat: number,
   lon: number,
   outFields: string,
-  timeoutMs = 10000
+  timeoutMs = 10000,
+  attempts = 2
 ): Promise<ArcGisResponse | null> {
   const url = new URL(`${base}/${layerId}/query`);
   url.searchParams.set("geometry", `${lon},${lat}`);
@@ -59,7 +66,7 @@ export async function queryPoint(
   url.searchParams.set("outFields", outFields);
   url.searchParams.set("returnGeometry", "false");
   url.searchParams.set("f", "json");
-  const res = await fetchWithRetry(url.toString(), timeoutMs);
+  const res = await fetchWithRetry(url.toString(), timeoutMs, attempts);
   if (!res || !res.ok) return null;
   try {
     return (await res.json()) as ArcGisResponse;

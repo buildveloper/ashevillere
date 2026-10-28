@@ -67,15 +67,103 @@ export function lookupFailurePanels(
   };
 }
 
+/**
+ * Per-panel deadlines. The route awaits the anonymous log for up to 2s after
+ * these resolve, so 3.5s here keeps the worst-case response under 6s.
+ * Schools gets 3s and no retry at the source (lib/schools.ts).
+ */
+export const PANEL_TIMEOUT_MS = {
+  flood: 3500,
+  str: 3500,
+  recovery: 3500,
+  schools: 3000,
+} as const;
+
+export type PanelKey = "flood" | "str" | "recovery" | "schools";
+
+/** Honest terminal state for a panel that exceeded its deadline. */
+function panelUnavailable(key: PanelKey): LookupPanelResult {
+  const message =
+    key === "flood"
+      ? "FEMA's flood map service is temporarily unreachable. We're not showing guessed data — check the official FEMA map."
+      : key === "str"
+        ? "Buncombe County's GIS service is temporarily unreachable. We're not showing guessed data — check the official zoning map."
+        : key === "recovery"
+          ? "Buncombe County's Helene damage records are temporarily unreachable. We're not showing guessed data — check the county's open data portal."
+          : "Buncombe County's school-district boundaries service is temporarily unreachable. We're not showing guessed data — verify with the school district directly.";
+  return { key, status: "unavailable", message };
+}
+
+/**
+ * Resolve `fallback` when `promise` hasn't settled within `ms`. The upstream
+ * fetch is not cancelled — this releases the response, it doesn't abort work
+ * already in flight. Never rejects: a thrown panel also lands on the fallback.
+ */
+export function withDeadline<T>(
+  promise: Promise<T>,
+  ms: number,
+  fallback: T
+): Promise<T> {
+  return new Promise<T>((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    promise
+      .then((value) => resolve(value))
+      .catch(() => resolve(fallback))
+      .finally(() => clearTimeout(timer));
+  });
+}
+
 export async function runLookup(ctx: LookupContext): Promise<LookupResult> {
-  // Run all four checks in parallel — they are independent.
+  const started = performance.now();
+  const timings: Record<PanelKey, number> = {
+    flood: 0,
+    str: 0,
+    recovery: 0,
+    schools: 0,
+  };
+
+  const runPanel = async (
+    key: PanelKey,
+    run: () => Promise<LookupPanelResult>
+  ): Promise<LookupPanelResult> => {
+    const panelStarted = performance.now();
+    const panel = await withDeadline(
+      Promise.resolve().then(run),
+      PANEL_TIMEOUT_MS[key],
+      panelUnavailable(key)
+    );
+    timings[key] = Math.round(performance.now() - panelStarted);
+    return panel;
+  };
+
+  // Run all four checks in parallel — they are independent. Each is bounded:
+  // a slow source resolves to an honest "unavailable" instead of holding the
+  // whole response.
   const [flood, str, recovery, schools] = await Promise.all([
-    runFlood(ctx),
-    runStr(ctx),
-    runRecovery(ctx),
-    runSchools(ctx),
+    runPanel("flood", () => runFlood(ctx)),
+    runPanel("str", () => runStr(ctx)),
+    runPanel("recovery", () => runRecovery(ctx)),
+    runPanel("schools", () => runSchools(ctx)),
   ]);
-  return { flood, str, recovery, schools };
+
+  const result = { flood, str, recovery, schools };
+
+  // Server-side measurement only — nothing is added to the public payload.
+  console.info(
+    "[lookup-timing]",
+    JSON.stringify({
+      ...timings,
+      total: Math.round(performance.now() - started),
+      statuses: {
+        flood: flood.status,
+        str: str.status,
+        recovery: recovery.status,
+        schools: schools.status,
+      },
+    })
+  );
+
+  return result;
 }
 
 /** Flood panel: call the flood module directly, map to the panel shape. */
