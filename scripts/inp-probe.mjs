@@ -73,6 +73,16 @@ try {
   });
   const client = await page.createCDPSession();
   await client.send("Network.enable");
+  // A probe hitting production must never write synthetic rows to
+  // lookup_events. The app only logs when VERCEL_ENV === "production"; this
+  // header opts the probe out (see lib/lookup-log-gate.ts).
+  if (process.env.LOOKUP_PROBE_SECRET) {
+    await client.send("Network.setExtraHTTPHeaders", {
+      headers: {
+        "x-ashevillere-probe-secret": process.env.LOOKUP_PROBE_SECRET,
+      },
+    });
+  }
   await client.send("Network.emulateNetworkConditions", {
     offline: false,
     latency: 150,

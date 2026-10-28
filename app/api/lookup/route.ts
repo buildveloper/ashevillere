@@ -2,6 +2,7 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { runLookupTimed, type LookupContext } from "@/lib/lookup";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { logLookupEvent } from "@/lib/lookup-log";
+import { isTrustedProbe, PROBE_HEADER, shouldLogLookup } from "@/lib/lookup-log-gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,8 +35,15 @@ export async function GET(req: NextRequest) {
 
   // Anonymous aggregate logging runs after the response is sent (Next `after`
   // → Vercel `waitUntil`), so it can never delay or block the lookup response.
-  // logLookupEvent catches its own failures; telemetry is never a dependency.
-  after(() => logLookupEvent(ctx, result));
+  // Only real production traffic is logged; previews and local runs are not
+  // user activity. Trusted probes (scripts/diagnostics) bypass it entirely.
+  const trustedProbe = isTrustedProbe(
+    req.headers.get(PROBE_HEADER),
+    process.env.LOOKUP_PROBE_SECRET
+  );
+  if (shouldLogLookup(process.env.VERCEL_ENV, trustedProbe)) {
+    after(() => logLookupEvent(ctx, result));
+  }
 
   return NextResponse.json(result, {
     headers: {
