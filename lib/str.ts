@@ -177,27 +177,21 @@ async function zoning(
 }
 
 /**
- * Check the City of Asheville open data portal for a homestay permit registry.
- * Only returns "found" if a real dataset is reachable and structured;
- * otherwise "unchecked" — never fabricated permit status.
- * Single attempt, tight timeout: best-effort only, must not stall the lookup.
+ * No homestay permit registry is checked.
+ *
+ * The City of Asheville open data portal (data.ashevillenc.gov) has never
+ * returned a response — the host and its CKAN package_search endpoint both
+ * time out (observed 504 after 25–40s). The old 3s probe therefore contributed
+ * only latency: it always aborted and returned "unchecked", putting a ~3.05s
+ * floor under every STR lookup.
+ *
+ * Per docs/rebuild-spec.md ("if it doesn't exist or isn't reliably structured,
+ * don't fake it — just show zoning eligibility and say permit status must be
+ * confirmed directly with the city"), the panel reports "unchecked" and keeps
+ * the City-confirmation wording. Restore a probe only when a working,
+ * documented endpoint exists.
  */
-async function checkHomestayRegistry(): Promise<"found" | "not-found" | "unchecked"> {
-  try {
-    const url = new URL("https://data.ashevillenc.gov/api/3/action/package_search");
-    url.searchParams.set("q", "homestay");
-    const res = await fetch(url.toString(), {
-      signal: AbortSignal.timeout(3000),
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) return "unchecked";
-    const data = (await res.json()) as { success?: boolean; result?: { count?: number } };
-    if (data.success && (data.result?.count ?? 0) > 0) return "found";
-    return "not-found";
-  } catch {
-    return "unchecked";
-  }
-}
+const PERMIT_REGISTRY = "unchecked" as const;
 
 /**
  * Apply the hardcoded STR rule set (docs/rebuild-spec.md) to a
@@ -271,13 +265,9 @@ export async function lookupStrEligibility(
   lat: number,
   lon: number
 ): Promise<StrResult> {
-  // 1) Jurisdiction (point-in-polygon) + homestay registry check run in
-  // parallel — they are independent. Zoning depends on jurisdiction, so it
-  // runs after (but is fast; ~1s on Vercel's network).
-  const [jur, registry] = await Promise.all([
-    jurisdiction(lat, lon),
-    checkHomestayRegistry(),
-  ]);
+  // Jurisdiction first; zoning depends on it. No registry probe runs — see
+  // PERMIT_REGISTRY above for why it was removed.
+  const jur = await jurisdiction(lat, lon);
   if (!jur) {
     return {
       status: "unavailable",
@@ -294,14 +284,14 @@ export async function lookupStrEligibility(
     jurisdiction: jur.kind,
     jurisdictionName: jur.name,
     zoning: zone?.code,
-    permitRegistry: registry,
+    permitRegistry: PERMIT_REGISTRY,
   });
 
   return {
     status: "result",
     value: applied.value,
     zoning: zone?.code,
-    permitRegistry: registry,
+    permitRegistry: PERMIT_REGISTRY,
     message: applied.message,
     source: {
       label: "Buncombe Co. GIS",

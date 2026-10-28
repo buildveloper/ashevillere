@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { applyStrRules, normalizeDistrict } from "./str";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { applyStrRules, lookupStrEligibility, normalizeDistrict } from "./str";
+
+const jsonResponse = (body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 
 describe("normalizeDistrict", () => {
   it("strips hyphens so GIS and ordinance forms compare equal", () => {
@@ -141,5 +147,47 @@ describe("applyStrRules — HOA disclaimer", () => {
       permitRegistry: "unchecked",
     });
     expect(r.message).toContain("HOA covenants");
+  });
+});
+
+describe("lookupStrEligibility — dead registry probe removed", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("never calls the City portal and keeps the City confirmation wording", async () => {
+    const seen: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        seen.push(url);
+        if (url.includes("bcmap_vt/MapServer/27")) {
+          return jsonResponse({
+            features: [
+              {
+                attributes: {
+                  DESCRIPTION: "CITY OF ASHEVILLE",
+                  DISTCODE: "CAS",
+                },
+              },
+            ],
+          });
+        }
+        if (url.includes("bcmap_vt/MapServer/31")) {
+          return jsonResponse({ features: [{ attributes: { DISTRICTS: "RS4" } }] });
+        }
+        return jsonResponse({ features: [] });
+      })
+    );
+
+    const r = await lookupStrEligibility(35.627842303875, -82.543478974663);
+
+    expect(r.status).toBe("result");
+    expect(r.permitRegistry).toBe("unchecked");
+    expect(r.message).toContain(
+      "Permit status must be confirmed directly with the City of Asheville."
+    );
+    expect(seen.some((u) => u.includes("data.ashevillenc.gov"))).toBe(false);
   });
 });
