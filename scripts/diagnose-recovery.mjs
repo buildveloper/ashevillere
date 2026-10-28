@@ -109,6 +109,24 @@ async function accela(where) {
   }));
 }
 
+/**
+ * The county GIS host is not reachable from every network (it times out from
+ * this machine while working from Vercel). Probe once, then skip the direct
+ * queries rather than stalling every address — the panel timing still tells
+ * us whether the lookup itself succeeded.
+ */
+let accelaDisabled = false;
+async function safeAccela(where) {
+  if (accelaDisabled) return { rows: [], failed: true };
+  try {
+    return { rows: await accela(where), failed: false };
+  } catch (err) {
+    accelaDisabled = true;
+    console.warn(`  [accela] unreachable from this host: ${err.message}`);
+    return { rows: [], failed: true };
+  }
+}
+
 function parseTimings(header) {
   const out = {};
   if (!header) return out;
@@ -126,9 +144,10 @@ function sameLocality(rows, geo) {
   });
 }
 
-function classify(status, message, timing, attempt1, all, geo) {
+function classify(status, message, timing, attempt1, all, geo, accelaFailed) {
   if (status === "result") return "ok";
   if (message?.includes("temporarily unreachable") || timing >= 6000) return "timeout";
+  if (accelaFailed) return "accela-unreachable";
   if (all.length && !sameLocality(all, geo).length) return "different-locality";
   if (attempt1.length || all.length) return "normalization-gap";
   return "county-absent";
@@ -164,15 +183,20 @@ for (const address of ADDRESSES) {
 
   const sig = signature(geo.matchedAddress ?? address);
   const street = (geo.matchedAddress ?? address).split(",")[0].trim().toUpperCase();
-  const attempt1 =
-    sig && (await accela(`UPPER(FullAddress) LIKE '${sqlStr(`${sig.number} %${sig.name}%`)}'`));
-  const exact = await accela(`UPPER(FullAddress) = '${sqlStr(street)}'`);
-  const prefix = await accela(`UPPER(FullAddress) LIKE '${sqlStr(`${street}%`)}'`);
-  const all = [...new Map([...attempt1, ...exact, ...prefix].map((r) => [r.FullAddress, r])).values()];
+  const a1 = sig
+    ? await safeAccela(`UPPER(FullAddress) LIKE '${sqlStr(`${sig.number} %${sig.name}%`)}'`)
+    : { rows: [], failed: false };
+  const a2 = await safeAccela(`UPPER(FullAddress) = '${sqlStr(street)}'`);
+  const a3 = await safeAccela(`UPPER(FullAddress) LIKE '${sqlStr(`${street}%`)}'`);
+  const accelaFailed = a1.failed || a2.failed || a3.failed;
+  const attempt1 = a1.rows;
+  const all = [...new Map([...a1.rows, ...a2.rows, ...a3.rows].map((r) => [r.FullAddress, r])).values()];
 
   console.log(`signature: ${JSON.stringify(sig)}`);
   console.log("AccelaParcelAddress rows:");
-  if (!all.length) {
+  if (accelaFailed) {
+    console.log("  (not queried — county GIS unreachable from this host)");
+  } else if (!all.length) {
     console.log("  (none)");
   } else {
     for (const r of all) {
@@ -182,7 +206,15 @@ for (const address of ADDRESSES) {
     }
   }
 
-  const classification = classify(rec.status, rec.message, timings.recovery ?? 0, attempt1, all, geo);
+  const classification = classify(
+    rec.status,
+    rec.message,
+    timings.recovery ?? 0,
+    attempt1,
+    all,
+    geo,
+    accelaFailed
+  );
   console.log(`classification: ${classification}`);
   results.push({ address, classification, geo, rec, attempt1, all });
 }
