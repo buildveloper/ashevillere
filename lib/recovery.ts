@@ -98,7 +98,7 @@ const DISCLAIMER =
 
 /** Shown only when the county address table answered successfully with no match. */
 export const PARCEL_GAP_MESSAGE =
-  "We couldn't match this address to a Buncombe County parcel record, so we can't check Helene damage records for it. Verify with Buncombe County's open data portal.";
+  "We couldn’t match this address to a Buncombe County parcel record. The county files some addresses under a different street suffix or town name than the one you may have used, so a real address can go unmatched. Verify directly with Buncombe County.";
 
 /** Shown when the parcel lookup itself failed — not the same as no match. */
 const PARCEL_UNAVAILABLE_MESSAGE =
