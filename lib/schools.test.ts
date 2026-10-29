@@ -1,5 +1,15 @@
-import { describe, expect, it } from "vitest";
-import { buildSchoolMessage, SCHOOL_DISCLAIMER } from "./schools";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { buildSchoolMessage, lookupSchoolZone, SCHOOL_DISCLAIMER } from "./schools";
+
+const jsonResponse = (body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("buildSchoolMessage", () => {
   it("lists every level the county record carries, verbatim", () => {
@@ -95,5 +105,49 @@ describe("isolation — schools failure cannot break the other panels", () => {
     expect(panels.flood.status).toBe("unavailable");
     expect(panels.str.status).toBe("unavailable");
     expect(panels.recovery.status).toBe("unavailable");
+  });
+});
+
+describe("lookupSchoolZone — upstream failure vs empty features", () => {
+  it("returns unavailable when the layer query gets an ArcGIS error envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/FeatureServer/8/query")) {
+          return jsonResponse({ error: { message: "school layer down" } });
+        }
+        if (url.includes("/FeatureServer/8?f=json")) {
+          return jsonResponse({});
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      })
+    );
+
+    const r = await lookupSchoolZone(35.6, -82.5);
+
+    expect(r.status).toBe("unavailable");
+    expect(r.message).toContain("temporarily unreachable");
+  });
+
+  it("keeps a successful zero-feature response as a data-gap result", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/FeatureServer/8/query")) {
+          return jsonResponse({ features: [] });
+        }
+        if (url.includes("/FeatureServer/8?f=json")) {
+          return jsonResponse({});
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      })
+    );
+
+    const r = await lookupSchoolZone(35.6, -82.5);
+
+    expect(r.status).toBe("result");
+    expect(r.message).toContain("no attendance-zone polygon");
   });
 });

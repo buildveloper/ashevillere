@@ -164,7 +164,9 @@ async function checkLomaLomr(
   lat: number,
   lon: number
 ): Promise<{ status: "none" | "loma" | "lomr" | "unknown"; detail?: string }> {
-  // Try Buncombe's FLOMA/LOMR layer first (reachable, verified).
+  // Try Buncombe's FLOMA/LOMR layer first (reachable, verified). queryPoint()
+  // returns null for a fetch failure or an ArcGIS error envelope; only a
+  // successful empty feature array means "none on file".
   const bc = await queryPoint(BUNCOMBE_ROOT, BUNCOMBE_LOMA_LAYER, lat, lon, "*");
   if (bc) {
     if (bc.features && bc.features.length > 0) {
@@ -176,16 +178,32 @@ async function checkLomaLomr(
   const svc = await fetchWithRetry(`${NFHL_ROOT}?f=pjson`);
   if (!svc || !svc.ok) return { status: "unknown", detail: "LOMA/LOMR layers not reachable." };
   try {
-    const data = (await svc.json()) as { layers?: Array<{ id: number; name: string }> };
-    const ids = (data.layers ?? [])
+    const data = (await svc.json()) as {
+      layers?: Array<{ id: number; name: string }>;
+      error?: { message?: string };
+    };
+    // An HTTP 200 error envelope (or a missing layer list) is a failed
+    // discovery, not "no LOMA/LOMR layers exist".
+    if (data.error || !Array.isArray(data.layers)) {
+      return { status: "unknown", detail: "LOMA/LOMR layers not reachable." };
+    }
+    const ids = data.layers
       .filter((l) => /LOMA|LOMR/i.test(l.name))
       .map((l) => l.id);
+    let failed = false;
     for (const id of ids) {
       const q = await queryPoint(NFHL_ROOT, id, lat, lon, "CASE_NO,STATUS");
-      if (q?.features?.length) {
+      if (!q) {
+        failed = true;
+        continue;
+      }
+      if (q.features?.length) {
         const name = ids.length === 1 ? "loma" : id;
         return { status: /LOMR/i.test(String(name)) ? "lomr" : "loma", detail: `Case on file (layer ${id}).` };
       }
+    }
+    if (failed) {
+      return { status: "unknown", detail: "LOMA/LOMR layers not fully reachable." };
     }
     return { status: "none", detail: "No LOMA/LOMR on file for this point." };
   } catch {

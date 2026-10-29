@@ -57,3 +57,72 @@ describe("queryPoint attempts", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("queryPoint response validation", () => {
+  const jsonResponse = (body: unknown) =>
+    new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+
+  it("treats an HTTP 200 ArcGIS error envelope as a failed query", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          error: { code: 400, message: "Invalid query parameters" },
+        })
+      )
+    );
+
+    const res = await queryPoint(
+      "https://example.test/FeatureServer",
+      8,
+      35.5,
+      -82.5,
+      "elementary,middle,high",
+      10,
+      1
+    );
+
+    expect(res).toBeNull();
+  });
+
+  it("keeps a successful zero-feature response as a real empty result", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse({ features: [] }))
+    );
+
+    const res = await queryPoint(
+      "https://example.test/FeatureServer",
+      8,
+      35.5,
+      -82.5,
+      "elementary,middle,high",
+      10,
+      1
+    );
+
+    expect(res).toEqual({ features: [] });
+  });
+
+  it("treats a response without a features array as a failed query", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse({ error: null }))
+    );
+
+    const res = await queryPoint(
+      "https://example.test/FeatureServer",
+      8,
+      35.5,
+      -82.5,
+      "elementary,middle,high",
+      10,
+      1
+    );
+
+    expect(res).toBeNull();
+  });
+});

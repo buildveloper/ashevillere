@@ -37,9 +37,39 @@
  *     record is not a guarantee of no damage, and this is stated on the panel.
  */
 
-import { fetchWithRetry, type ArcGisResponse } from "./arcgis";
+import {
+  fetchWithRetry,
+  type ArcGisFeature,
+  type ArcGisResponse,
+} from "./arcgis";
 
 export type RecoveryStatus = "result" | "unavailable" | "error";
+
+/** Why an upstream query could not produce a real answer. */
+export type LookupFailureReason =
+  | "network"
+  | "timeout"
+  | "http"
+  | "error-envelope"
+  | "unreadable";
+
+/**
+ * Parcel resolution outcome. `no-match` is only for a successful address-table
+ * query that found nothing; any failed query is `unavailable`.
+ */
+export type ParcelLookup =
+  | { kind: "matched"; pinnum: string; sourceName: string; sourceUrl: string }
+  | { kind: "no-match" }
+  | { kind: "unavailable"; reason: LookupFailureReason };
+
+/**
+ * Damage-table outcome. `no-record` is only for a successful query with zero
+ * features; every failure mode is `unavailable`.
+ */
+export type DamageLookup =
+  | { kind: "record"; damageType?: string }
+  | { kind: "no-record" }
+  | { kind: "unavailable"; reason: LookupFailureReason };
 
 export interface RecoveryResult {
   status: RecoveryStatus;
@@ -66,17 +96,43 @@ const POST_HELENE_IMAGERY =
 const DISCLAIMER =
   "This is informational and reflects county records reported after Hurricane Helene (September 2024). It is not an official damage determination and does not replace verification with Buncombe County or your insurer.";
 
-/** Query an ArcGIS layer/table for a URL. Returns parsed response or null. */
-async function query(
-  url: string,
-  timeoutMs = 10000
-): Promise<ArcGisResponse | null> {
+/** Shown only when the county address table answered successfully with no match. */
+export const PARCEL_GAP_MESSAGE =
+  "We couldn't match this address to a Buncombe County parcel record, so we can't check Helene damage records for it. Verify with Buncombe County's open data portal.";
+
+/** Shown when the parcel lookup itself failed — not the same as no match. */
+const PARCEL_UNAVAILABLE_MESSAGE =
+  "Buncombe County's parcel records are temporarily unreachable. We're not showing guessed data — try again or verify with Buncombe County.";
+
+/** Shown when the damage table failed — never treated as no record. */
+const DAMAGE_UNAVAILABLE_MESSAGE =
+  "Buncombe County's Helene damage records are temporarily unreachable. We're not showing guessed data — check the county's open data portal.";
+
+type ArcQuery =
+  | { kind: "ok"; data: ArcGisResponse & { features: ArcGisFeature[] } }
+  | { kind: "unavailable"; reason: LookupFailureReason };
+
+/**
+ * Query an ArcGIS table. Returns a distinct failure outcome for fetch errors,
+ * non-2xx responses, unreadable JSON, and HTTP 200 error envelopes. An empty
+ * `features` array is a successful zero-row answer, not a failure.
+ */
+async function query(url: string, timeoutMs = 10000): Promise<ArcQuery> {
   const res = await fetchWithRetry(url, timeoutMs);
-  if (!res || !res.ok) return null;
+  if (!res) return { kind: "unavailable", reason: "network" };
+  if (!res.ok) return { kind: "unavailable", reason: "http" };
   try {
-    return (await res.json()) as ArcGisResponse;
+    const data = (await res.json()) as ArcGisResponse;
+    if (data?.error) return { kind: "unavailable", reason: "error-envelope" };
+    if (!Array.isArray(data?.features)) {
+      return { kind: "unavailable", reason: "unreadable" };
+    }
+    return {
+      kind: "ok",
+      data: data as ArcGisResponse & { features: ArcGisFeature[] },
+    };
   } catch {
-    return null;
+    return { kind: "unavailable", reason: "unreadable" };
   }
 }
 
@@ -193,40 +249,50 @@ export function matchCountyAddress(
  * canonical form ("2 ROBERTS ST, ASHEVILLE, NC, 28801"); we try exact match
  * first, then a normalized street-name + house-number fallback.
  *
- * If the address is not in the county's table, returns null — the caller
- * reports an honest unavailable. We deliberately do NOT fall back to a
+ * A successful query with no matching row is `no-match`; any failed query is
+ * `unavailable` and stops the search. We deliberately do NOT fall back to a
  * spatial/nearest-parcel lookup: a street-centerline geocode point often
  * falls on a road right-of-way between parcels, and picking a neighbor's
  * parcel would silently check the wrong property's damage record.
  */
 async function parcelByAddress(
   matchedAddress: string
-): Promise<{ pinnum: string; sourceName: string; sourceUrl: string } | null> {
+): Promise<ParcelLookup> {
   const street = matchedAddress.split(",")[0]?.trim().toUpperCase();
-  if (!street) return null;
+  if (!street) return { kind: "no-match" };
+
+  type AddressRow = { pinnum: string; full: string };
+  type RowsResult =
+    | { kind: "ok"; rows: AddressRow[] }
+    | { kind: "unavailable"; reason: LookupFailureReason };
 
   /** Run one address-table query, returning the ParcelNumber/FullAddress rows. */
-  const rowsFor = async (where: string) => {
+  const rowsFor = async (where: string): Promise<RowsResult> => {
     const url = new URL(`${ACCELA_ADDRESS_TABLE}/query`);
     url.searchParams.set("where", where);
     url.searchParams.set("returnGeometry", "false");
     url.searchParams.set("outFields", "ParcelNumber,FullAddress");
     url.searchParams.set("f", "json");
     const data = await query(url.toString());
-    return (data?.features ?? []).map((f) => ({
-      pinnum: String(f.attributes?.ParcelNumber ?? "").trim(),
-      full: String(f.attributes?.FullAddress ?? "").trim(),
-    }));
+    if (data.kind === "unavailable") return data;
+    return {
+      kind: "ok",
+      rows: data.data.features.map((f) => ({
+        pinnum: String(f.attributes?.ParcelNumber ?? "").trim(),
+        full: String(f.attributes?.FullAddress ?? "").trim(),
+      })),
+    };
   };
 
-  const found = (pinnum: string) =>
+  const found = (pinnum: string): ParcelLookup =>
     pinnum
       ? {
+          kind: "matched",
           pinnum,
           sourceName: "Buncombe Co. GIS (Accela address records)",
           sourceUrl: "https://gis.buncombecounty.org",
         }
-      : null;
+      : { kind: "no-match" };
 
   // Attempt 1: match on house number + street name, IGNORING directional and
   // suffix formatting. The county table stores the raw situs form ("48 S
@@ -236,17 +302,18 @@ async function parcelByAddress(
   // signature then picks the exact one (suffix/ directional aware).
   const sig = streetSignature(street);
   if (sig) {
-    const rows = await rowsFor(
+    const result = await rowsFor(
       `UPPER(FullAddress) LIKE '${sqlStr(`${sig.number} %${sig.name}%`)}'`
     );
+    if (result.kind === "unavailable") return result;
     const line = matchCountyAddress(
       sig,
-      rows.map((r) => r.full)
+      result.rows.map((r) => r.full)
     );
     if (line) {
-      const hit = rows.find((r) => r.full === line);
-      const result = found(hit?.pinnum ?? "");
-      if (result) return result;
+      const hit = result.rows.find((r) => r.full === line);
+      const match = found(hit?.pinnum ?? "");
+      if (match.kind === "matched") return match;
     }
   }
 
@@ -256,20 +323,23 @@ async function parcelByAddress(
     `UPPER(FullAddress) = '${sqlStr(street)}'`,
     `UPPER(FullAddress) LIKE '${sqlStr(`${street}%`)}'`,
   ]) {
-    const rows = await rowsFor(where);
-    const result = found(rows[0]?.pinnum ?? "");
-    if (result) return result;
+    const result = await rowsFor(where);
+    if (result.kind === "unavailable") return result;
+    const match = found(result.rows[0]?.pinnum ?? "");
+    if (match.kind === "matched") return match;
   }
-  return null;
+  return { kind: "no-match" };
 }
 
 /**
  * Check the county's Helene damage parcels table for the PIN.
  * Single attempt with a tight timeout — best-effort, must not stall.
+ *
+ * `no-record` is returned only for a successful query whose features array is
+ * empty. Every other outcome (including an HTTP 200 ArcGIS error envelope) is
+ * `unavailable` so the panel can never present a failure as "no damage".
  */
-async function damageForPin(
-  pinnum: string
-): Promise<{ damageType?: string } | null> {
+async function damageForPin(pinnum: string): Promise<DamageLookup> {
   try {
     const url = new URL(`${ACCELA_DAMAGE_TABLE}/query`);
     url.searchParams.set("where", `pin='${sqlStr(pinnum)}'`);
@@ -280,15 +350,27 @@ async function damageForPin(
       signal: AbortSignal.timeout(4000),
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as ArcGisResponse;
-    if (data.error) return null;
-    const attrs = data.features?.[0]?.attributes;
-    if (!attrs) return null;
-    const damageType = String(attrs.DamageType ?? "").trim();
-    return { damageType: damageType || undefined };
-  } catch {
-    return null;
+    if (!res.ok) return { kind: "unavailable", reason: "http" };
+
+    let data: ArcGisResponse;
+    try {
+      data = (await res.json()) as ArcGisResponse;
+    } catch {
+      return { kind: "unavailable", reason: "unreadable" };
+    }
+    if (data?.error) return { kind: "unavailable", reason: "error-envelope" };
+    if (!Array.isArray(data?.features)) {
+      return { kind: "unavailable", reason: "unreadable" };
+    }
+    if (data.features.length === 0) return { kind: "no-record" };
+
+    const damageType = String(data.features[0]?.attributes?.DamageType ?? "").trim();
+    return { kind: "record", damageType: damageType || undefined };
+  } catch (err) {
+    const timedOut =
+      err instanceof Error &&
+      (err.name === "TimeoutError" || err.name === "AbortError");
+    return { kind: "unavailable", reason: timedOut ? "timeout" : "network" };
   }
 }
 
@@ -314,19 +396,24 @@ async function imageryAvailable(): Promise<boolean> {
 }
 
 /**
- * Classify the county damage-table response into the panel result.
+ * Classify the county damage-table outcome into the panel result.
  * Pure — unit-testable, no network.
  *
  * Honesty contract: "damage-reported" and "no-damage-record" are both real
- * CHECKED states (the query succeeded); a null response means the query did
- * not succeed and is surfaced as unavailable.
+ * CHECKED states (the query succeeded); `unavailable` means the query did not
+ * succeed and is surfaced as such, never as "no damage".
  */
-export function classifyDamageResponse(
-  damage: { damageType?: string } | null
-): RecoveryResult {
+export function classifyDamageResponse(damage: DamageLookup): RecoveryResult {
+  if (damage.kind === "unavailable") {
+    return {
+      status: "unavailable",
+      message: DAMAGE_UNAVAILABLE_MESSAGE,
+    };
+  }
+
   const parts: string[] = [];
 
-  if (damage) {
+  if (damage.kind === "record") {
     parts.push(
       "This parcel is in Buncombe County's Helene damage parcels dataset."
     );
@@ -384,29 +471,38 @@ export async function lookupRecoveryContext(
   //    Without a matched address there is no trustworthy parcel match (a
   //    street-centerline geocode point is not reliably inside a parcel), so
   //    we report an honest unavailable rather than guess a neighbor's parcel.
-  let parcel: { pinnum: string; sourceName: string; sourceUrl: string } | null =
-    null;
+  let parcel: ParcelLookup;
   if (matchedAddress) {
     parcel = await parcelByAddress(matchedAddress);
+  } else {
+    parcel = { kind: "no-match" };
   }
-  if (!parcel) {
+
+  // A failed county query is not the same as "this address has no parcel".
+  if (parcel.kind === "unavailable") {
     return {
       status: "unavailable",
-      message:
-        "We couldn't match this address to a Buncombe County parcel record, so we can't check Helene damage records for it. Verify with Buncombe County's open data portal.",
+      message: PARCEL_UNAVAILABLE_MESSAGE,
+    };
+  }
+  if (parcel.kind === "no-match") {
+    return {
+      status: "unavailable",
+      message: PARCEL_GAP_MESSAGE,
     };
   }
 
   // 2) Check the county's Helene damage parcels dataset.
   const damage = await damageForPin(parcel.pinnum);
-
-  const imagery = await imageryAvailable();
-
   const base = classifyDamageResponse(damage);
 
-  if (imagery && base.message) {
-    base.message +=
-      " Post-Helene county aerial imagery is available for this area (Buncombe County GIS).";
+  // Imagery is contextual; never append it to an unavailable damage state.
+  if (base.status === "result") {
+    const imagery = await imageryAvailable();
+    if (imagery && base.message) {
+      base.message +=
+        " Post-Helene county aerial imagery is available for this area (Buncombe County GIS).";
+    }
   }
 
   return base;

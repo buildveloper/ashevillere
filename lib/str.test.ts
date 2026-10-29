@@ -191,3 +191,56 @@ describe("lookupStrEligibility — dead registry probe removed", () => {
     expect(seen.some((u) => u.includes("data.ashevillenc.gov"))).toBe(false);
   });
 });
+
+describe("lookupStrEligibility — upstream failure vs empty zoning", () => {
+  it("returns unavailable when the zoning query gets an ArcGIS error envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("bcmap_vt/MapServer/27")) {
+          return jsonResponse({
+            features: [
+              { attributes: { DESCRIPTION: "CITY OF ASHEVILLE", DISTCODE: "CAS" } },
+            ],
+          });
+        }
+        if (url.includes("bcmap_vt/MapServer/31")) {
+          return jsonResponse({ error: { message: "zoning layer down" } });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      })
+    );
+
+    const r = await lookupStrEligibility(35.627842303875, -82.543478974663);
+
+    expect(r.status).toBe("unavailable");
+    expect(r.message).toContain("zoning service is temporarily unreachable");
+  });
+
+  it("keeps a successful zero-feature zoning response as a normal result", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("bcmap_vt/MapServer/27")) {
+          return jsonResponse({
+            features: [
+              { attributes: { DESCRIPTION: "CITY OF ASHEVILLE", DISTCODE: "CAS" } },
+            ],
+          });
+        }
+        if (url.includes("bcmap_vt/MapServer/31")) {
+          return jsonResponse({ features: [] });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      })
+    );
+
+    const r = await lookupStrEligibility(35.627842303875, -82.543478974663);
+
+    expect(r.status).toBe("result");
+    expect(r.zoning).toBeUndefined();
+    expect(r.message).toContain("zoning unknown");
+  });
+});

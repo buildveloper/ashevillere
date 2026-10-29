@@ -39,6 +39,16 @@ describe("isBuncombePoint", () => {
     await expect(isBuncombePoint(35.59518, -82.55175)).resolves.toBe("unavailable");
   });
 
+  it("returns unavailable on an HTTP 200 ArcGIS error envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse({ error: { code: 400, message: "Invalid query" } })
+      )
+    );
+    await expect(isBuncombePoint(35.59518, -82.55175)).resolves.toBe("unavailable");
+  });
+
   it("builds the point query with the county's boundary layer and SR params", async () => {
     const fetchMock = vi
       .fn()

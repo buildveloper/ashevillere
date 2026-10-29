@@ -40,7 +40,7 @@ export interface ArcGisFeature {
 
 export interface ArcGisResponse {
   features?: ArcGisFeature[];
-  error?: { message?: string };
+  error?: { code?: number; message?: string; details?: string[] };
 }
 
 /**
@@ -69,7 +69,15 @@ export async function queryPoint(
   const res = await fetchWithRetry(url.toString(), timeoutMs, attempts);
   if (!res || !res.ok) return null;
   try {
-    return (await res.json()) as ArcGisResponse;
+    const data = (await res.json()) as ArcGisResponse;
+    // ArcGIS reports many query failures as HTTP 200 with an error envelope.
+    // That is a failed query, not an empty result — callers must not turn it
+    // into a normal negative ("no feature at this point").
+    if (data?.error) return null;
+    // A successful layer query always returns a features array (possibly
+    // empty). A response without one is malformed, not a zero-row answer.
+    if (!Array.isArray(data?.features)) return null;
+    return data;
   } catch {
     return null;
   }

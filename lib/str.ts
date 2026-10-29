@@ -147,33 +147,52 @@ async function jurisdiction(
   return { kind: "other-town", name, distCode };
 }
 
+/**
+ * Zoning lookup outcome. `none` means the service answered successfully and
+ * returned no district at the point; `unavailable` means the query failed
+ * (fetch, timeout, non-2xx, or an ArcGIS error envelope) and must not be
+ * rendered as a normal "zoning unknown" result.
+ */
+type ZoningLookup =
+  | { kind: "found"; code: string; layerName: string }
+  | { kind: "none" }
+  | { kind: "unavailable" };
+
 /** Pull the zoning district for the parcel. */
 async function zoning(
   lat: number,
   lon: number,
   jur: Awaited<ReturnType<typeof jurisdiction>>
-): Promise<{ code: string; layerName: string } | null> {
-  if (!jur) return null;
+): Promise<ZoningLookup> {
+  if (!jur) return { kind: "unavailable" };
   if (jur.kind === "city") {
     const data = await queryPoint(BUNCOMBE_ROOT, ASHEVILLE_ZONING_LAYER, lat, lon, "DISTRICTS");
-    const code = data?.features?.[0]?.attributes?.DISTRICTS;
-    if (code) return { code: String(code).trim(), layerName: "City of Asheville Zoning" };
-    return null;
+    if (!data) return { kind: "unavailable" };
+    const code = data.features?.[0]?.attributes?.DISTRICTS;
+    if (code) return { kind: "found", code: String(code).trim(), layerName: "City of Asheville Zoning" };
+    return { kind: "none" };
   }
   if (jur.kind === "other-town") {
-    // Try the matching town zoning layer.
+    // Try the matching town zoning layer. A found code is a real result; if
+    // no layer has one and any layer failed, the outcome is unavailable.
+    let failed = false;
     for (const [layerId, town] of Object.entries(OTHER_TOWN_ZONING)) {
       const data = await queryPoint(BUNCOMBE_ROOT, Number(layerId), lat, lon, "*");
-      const code = data?.features?.[0]?.attributes?.ZONING_CODE;
-      if (code) return { code: String(code).trim(), layerName: `${town} Zoning` };
+      if (!data) {
+        failed = true;
+        continue;
+      }
+      const code = data.features?.[0]?.attributes?.ZONING_CODE;
+      if (code) return { kind: "found", code: String(code).trim(), layerName: `${town} Zoning` };
     }
-    return null;
+    return failed ? { kind: "unavailable" } : { kind: "none" };
   }
   // County.
   const data = await queryPoint(BUNCOMBE_ROOT, COUNTY_ZONING_LAYER, lat, lon, "ZONING_CODE");
-  const code = data?.features?.[0]?.attributes?.ZONING_CODE;
-  if (code) return { code: String(code).trim(), layerName: "Buncombe County Zoning" };
-  return null;
+  if (!data) return { kind: "unavailable" };
+  const code = data.features?.[0]?.attributes?.ZONING_CODE;
+  if (code) return { kind: "found", code: String(code).trim(), layerName: "Buncombe County Zoning" };
+  return { kind: "none" };
 }
 
 /**
@@ -276,21 +295,31 @@ export async function lookupStrEligibility(
     };
   }
 
-  // 2) Zoning district.
+  // 2) Zoning district. A failed query is unavailable, not a normal
+  // "zoning unknown" result; only a successful empty response is `none`.
   const zone = await zoning(lat, lon, jur);
+  if (zone.kind === "unavailable") {
+    return {
+      status: "unavailable",
+      message:
+        "Buncombe County's zoning service is temporarily unreachable. We're not showing guessed data — check the official zoning map for this address.",
+    };
+  }
+
+  const zoningCode = zone.kind === "found" ? zone.code : undefined;
 
   // Apply the hardcoded rule set.
   const applied = applyStrRules({
     jurisdiction: jur.kind,
     jurisdictionName: jur.name,
-    zoning: zone?.code,
+    zoning: zoningCode,
     permitRegistry: PERMIT_REGISTRY,
   });
 
   return {
     status: "result",
     value: applied.value,
-    zoning: zone?.code,
+    zoning: zoningCode,
     permitRegistry: PERMIT_REGISTRY,
     message: applied.message,
     source: {
