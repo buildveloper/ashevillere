@@ -46,11 +46,15 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json(result, {
-    headers: {
-      // Server-measured panel durations, for preview/production diagnostics.
-      // The JSON payload is unchanged.
-      "Server-Timing": `flood;dur=${timings.flood}, str;dur=${timings.str}, recovery;dur=${timings.recovery}, schools;dur=${timings.schools}, total;dur=${timings.total}`,
-      "X-Lookup-Timings": `flood=${timings.flood};str=${timings.str};recovery=${timings.recovery};schools=${timings.schools};total=${timings.total}`,
-    },
+    // Server-measured panel durations, for diagnostics only. Trusted probes
+    // (the ones already allowed to skip logging) are the only callers that
+    // may see them; anonymous traffic must not read timing data. The JSON
+    // payload is unchanged.
+    headers: trustedProbe
+      ? {
+          "Server-Timing": `flood;dur=${timings.flood}, str;dur=${timings.str}, recovery;dur=${timings.recovery}, schools;dur=${timings.schools}, total;dur=${timings.total}`,
+          "X-Lookup-Timings": `flood=${timings.flood};str=${timings.str};recovery=${timings.recovery};schools=${timings.schools};total=${timings.total}`,
+        }
+      : undefined,
   });
 }
