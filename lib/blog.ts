@@ -1,18 +1,21 @@
 /**
- * Blog content — flood / STR / recovery explainers for Buncombe County.
+ * Blog content — flood / STR / recovery / property-tax explainers for
+ * Buncombe County.
  *
  * Every claim here is grounded in docs/rebuild-spec.md, the methodology
- * page, or the verified behavior of the data layer (lib/flood.ts, lib/str.ts,
- * lib/recovery.ts). No unsourced specifics: if a dataset can't support a
- * claim, the post says so plainly instead of filling the gap.
+ * page, the verified behavior of the data layer (lib/flood.ts, lib/str.ts,
+ * lib/recovery.ts), or the official sources cited on the post itself. No
+ * unsourced specifics: if a dataset can't support a claim, the post says so
+ * plainly instead of filling the gap.
  */
 
-export type BlogCategory = "flood" | "str" | "recovery";
+export type BlogCategory = "flood" | "str" | "recovery" | "tax";
 
 export const CATEGORY_LABELS: Record<BlogCategory, string> = {
   flood: "Flood",
   str: "STR rules",
   recovery: "Recovery",
+  tax: "Property tax",
 };
 
 export interface SourceCitation {
@@ -36,6 +39,8 @@ export interface BlogPost {
   excerpt: string;
   sections: BlogSection[];
   sources: SourceCitation[];
+  /** Optional per-post disclaimer; falls back to the template default. */
+  disclaimer?: string;
 }
 
 export const BLOG_POSTS: BlogPost[] = [
@@ -192,6 +197,131 @@ export const BLOG_POSTS: BlogPost[] = [
       { label: "Buncombe Co. open data — Helene damage parcels", url: "https://data.buncombenc.gov/", lastUpdated: "County-maintained" },
       { label: "Buncombe County GIS (Accela address records)", url: "https://gis.buncombecounty.org", lastUpdated: "County-maintained" },
       { label: "NC Department of Public Safety", url: "https://www.ncdps.gov", lastUpdated: "Ongoing" },
+    ],
+  },
+  {
+    slug: "buncombe-county-2026-property-tax-bill",
+    title:
+      "Your 2026 Buncombe County property tax bill: what the 2021 values mean, and the dates that matter",
+    category: "tax",
+    date: "2026-10-30",
+    excerpt:
+      "Buncombe County’s 2026 bills are built on 2021 values, not the reappraisal that’s on hold until 2027. Here are the rates, the dates, and what to confirm.",
+    disclaimer:
+      "Disclaimer: this explainer is informational, not tax advice, and not a substitute for an official bill, assessment, or professional advice. Rates and deadlines can change — verify with the Buncombe County Tax Department and the cited official sources before making decisions about a property.",
+    sections: [
+      {
+        heading: "The short version",
+        body: [
+          "Buncombe County’s 2026 property tax bills are calculated on the county’s 2021 assessed values. The county rate is 61.54 cents per $100 of assessed value, applied to those older values.",
+          "The 2026 reappraisal is in a moratorium until January 1, 2027 under Session Law 2026-8. That is why the 2026 bill uses 2021 values: the reappraised values take effect in 2027.",
+          "So the value that decides this year’s bill is the 2021 value on the record — not the reappraised value.",
+        ],
+      },
+      {
+        heading: "Why the 2021 values still decide the 2026 bill",
+        body: [
+          "The 2026 reappraisal is in a moratorium until January 1, 2027 under Session Law 2026-8. While that moratorium holds, 2026 bills are issued on the 2021 values.",
+          "Appeals already filed on 2026 values stay on hold. They apply once those values take effect in 2027 — they do not change the 2026 bill.",
+        ],
+      },
+      {
+        heading: "A lower reappraised value doesn’t guarantee a lower bill",
+        body: [
+          "A bill can rise even when the value it is built on is lower than the reappraised value. According to the county’s Tax Department, whether it does depends on each jurisdiction’s rates.",
+          "Buncombe County’s 61.54-cent rate is the county’s share. City, school, fire district, and downtown district rates apply where they apply — and they are set separately from the county rate.",
+        ],
+      },
+      {
+        heading: "The rates, and where they come from",
+        body: [
+          "The county rate is 61.54 cents per $100 of assessed value, applied to 2021 values, per the Buncombe County Tax Department.",
+          "Local news reported these additional rates in July 2026 — as reported July 2026; may have changed; confirm with your jurisdiction.",
+        ],
+        bullets: [
+          "Unified fire district: 17.38 cents",
+          "Asheville City Schools supplement: 11.75 cents",
+          "City of Asheville: 50.78 cents",
+          "Downtown district: 8.77 cents",
+        ],
+      },
+      {
+        heading: "The dates that matter",
+        body: [
+          "The 2026 bill was due September 1. Payments received or postmarked by January 5, 2027 avoid interest; interest accrues from January 6, 2027.",
+          "The deadline to appeal the values used for the current bill is December 31, 2026, per the county’s August 20, 2026 release.",
+        ],
+        bullets: [
+          "September 1, 2026 — 2026 bills were due.",
+          "December 31, 2026 — deadline to appeal the values used for the current bill.",
+          "January 1, 2027 — the reappraisal moratorium ends under Session Law 2026-8; reappraised values take effect in 2027.",
+          "January 5, 2027 — payments received or postmarked by this date avoid interest.",
+          "January 6, 2027 — interest begins to accrue.",
+        ],
+      },
+      {
+        heading: "Other towns set their own rates",
+        body: [
+          "Other towns in Buncombe County set their own rates. Those rates are not listed here and are not included in the figures above.",
+          "Confirm the rate and the bill that apply to a specific property with the Buncombe County Tax Department.",
+        ],
+      },
+      {
+        heading: "Find and pay your bill",
+        body: [
+          "Buncombe County’s tax portal is tax.buncombenc.gov. Owners can find and pay their bill there.",
+          "This explainer does not calculate an individual bill or estimate what anyone owes.",
+        ],
+      },
+      {
+        heading: "What this post won’t tell you",
+        body: [
+          "It won’t predict 2027 values or 2027 rates. The reappraisal takes effect in 2027, and those figures are not part of this post.",
+          "It won’t list every rate. Towns set their own, and rates reported in July 2026 may have since changed.",
+          "This is informational, not tax advice. Confirm anything that affects a bill with the Buncombe County Tax Department and the official sources cited below.",
+        ],
+      },
+    ],
+    sources: [
+      {
+        label: "Buncombe County Tax Department",
+        url: "https://www.buncombenc.gov/581/Tax-Department",
+        lastUpdated: "As of October 2026",
+      },
+      {
+        label: "Buncombe County newsflash — 2026 tax bill notice",
+        url: "https://www.buncombenc.gov/m/newsflash/Home/Detail/1102",
+        lastUpdated: "As of October 2026",
+      },
+      {
+        label: "Buncombe County — MyValueBC 2026 reappraisal",
+        url: "https://www.buncombenc.gov/588/MyValueBC-2026-Reappraisal",
+        lastUpdated: "As of October 2026",
+      },
+      {
+        label: "Buncombe County news releases (August 20, 2026 release)",
+        url: "https://www.buncombenc.gov/m/newsflash?cat=31",
+        lastUpdated: "As of October 2026",
+      },
+      {
+        label: "Buncombe County tax portal",
+        url: "https://tax.buncombenc.gov",
+        lastUpdated: "As of October 2026",
+      },
+      {
+        label:
+          "Asheville.com — Buncombe County sets 61.54-cent tax rate using 2021 property values",
+        url: "https://www.asheville.com/news/2026/07/buncombe-county-sets-61-54-cent-tax-rate-using-2021-property-values/",
+        lastUpdated:
+          "As reported July 2026; may have changed; confirm with your jurisdiction",
+      },
+      {
+        label:
+          "Mountain Xpress — Asheville City Council amends tax rate in response to new state laws",
+        url: "https://mountainx.com/news/local-government/asheville-city-council-amends-tax-rate-in-response-to-new-state-laws/",
+        lastUpdated:
+          "As reported July 2026; may have changed; confirm with your jurisdiction",
+      },
     ],
   },
 ];

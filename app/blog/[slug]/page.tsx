@@ -5,6 +5,9 @@ import { BLOG_POSTS, CATEGORY_LABELS, getPost } from "@/lib/blog";
 
 export const dynamicParams = false;
 
+const DEFAULT_DISCLAIMER =
+  "Disclaimer: this explainer is informational and not a substitute for an official determination, insurance assessment, or professional advice. Verify with the cited official sources before making decisions about a property.";
+
 export function generateStaticParams() {
   return BLOG_POSTS.map((p) => ({ slug: p.slug }));
 }
@@ -107,10 +110,7 @@ export default async function BlogArticle({
           ))}
         </ul>
         <p className="mt-5 text-xs leading-relaxed text-muted">
-          Disclaimer: this explainer is informational and not a substitute for
-          an official determination, insurance assessment, or professional
-          advice. Verify with the cited official sources before making
-          decisions about a property.
+          {post.disclaimer ?? DEFAULT_DISCLAIMER}
         </p>
       </div>
     </main>

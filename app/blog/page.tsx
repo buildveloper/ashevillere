@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 type Filter = BlogCategory | "all";
 
-const FILTERS: Filter[] = ["all", "flood", "str", "recovery"];
+const FILTERS: Filter[] = ["all", "flood", "str", "recovery", "tax"];
 
 export default async function BlogIndex({
   searchParams,
